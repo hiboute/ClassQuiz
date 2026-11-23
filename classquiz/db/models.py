@@ -187,6 +187,14 @@ class TextQuizAnswer(BaseModel):
     case_sensitive: bool
 
 
+class QuestionPoints(str, Enum):
+    """How many points a question awards: standard (1000), double (2000) or none (0)."""
+
+    STANDARD = "standard"
+    DOUBLE = "double"
+    NONE = "none"
+
+
 class QuizQuestion(BaseModel):
     question: str
     time: str  # in Secs
@@ -194,6 +202,21 @@ class QuizQuestion(BaseModel):
     answers: list[ABCDQuizAnswer] | RangeQuizAnswer | list[TextQuizAnswer] | list[VotingQuizAnswer] | str
     image: str | None = None
     hide_results: bool | None = False
+    # Stored inside the quiz's questions JSON column: optional with a default,
+    # so quizzes saved before this field existed load unchanged (no migration).
+    points: QuestionPoints = QuestionPoints.STANDARD
+
+    @field_validator("points", mode="before")
+    @classmethod
+    def points_default_if_missing(cls, v: object) -> object:
+        # null, "" or an unknown value from an old/hand-edited quiz -> standard
+        if v is None or v == "":
+            return QuestionPoints.STANDARD
+        if isinstance(v, str) and v.lower() in {p.value for p in QuestionPoints}:
+            return v.lower()
+        if isinstance(v, QuestionPoints):
+            return v
+        return QuestionPoints.STANDARD
 
     @field_validator("answers")
     def answers_not_none_if_abcd_type(cls, v, info: ValidationInfo):
@@ -382,7 +405,10 @@ class AnswerData(BaseModel):
     answer: str
     right: bool
     time_taken: float  # In milliseconds
-    score: int
+    score: int  # Points gained on this question, streak bonus included
+    # Added for the live leaderboard; defaults keep stored results loading.
+    streak: int = 0  # Answer streak after this answer
+    streak_bonus: int = 0  # Part of `score` that comes from the streak
 
 
 class AnswerDataList(RootModel):

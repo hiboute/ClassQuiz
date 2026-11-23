@@ -11,9 +11,9 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from pydantic import BaseModel, ValidationError
 
 from classquiz.config import redis
-from classquiz.db.models import AnswerData, GamePlayer, PlayGame, QuizQuestionType
-from classquiz.socket_server import calculate_score, set_answer, sio
-from classquiz.socket_server.helpers import check_answer, has_already_answered
+from classquiz.db.models import GamePlayer, PlayGame, QuizQuestionType
+from classquiz.socket_server import record_answer, sio
+from classquiz.socket_server.helpers import check_answer
 from classquiz.socket_server.models import SubmitAnswerData
 
 router = APIRouter()
@@ -29,10 +29,6 @@ async def submit_answer_fn(data_answer: int, game_pin: str, player_id: str, now:
     question = game.questions[game.current_question]
     question_time = datetime.fromisoformat(await redis.get(f"game:{game_pin}:current_time"))
     username = await redis.get(f"game:cqc:player:{player_id}")
-    already_answered = await has_already_answered(game_pin, game.current_question, username)
-    if already_answered:
-        print("already answerered")
-        return
     if question.type not in (QuizQuestionType.ABCD, QuizQuestionType.VOTING):
         print("Wrong q type")
         return
@@ -41,30 +37,20 @@ async def submit_answer_fn(data_answer: int, game_pin: str, player_id: str, now:
     answer_data_obj = SubmitAnswerData(question_index=game.current_question, answer=selected_answer)
     answer_right, stored_answer = check_answer(game, answer_data_obj)
     diff = (question_time - now).total_seconds() * 1000
-    score = 0
-    if answer_right:
-        score = calculate_score(
-            abs(diff),
-            int(float(question.time)),
-        )
-        if score > 1000:
-            score = 1000
-    await redis.set(f"answer_given:{player_id}:{game.current_question}", "True", ex=600)
-    await redis.hincrby(f"game_session:{game_pin}:player_scores", username, score)
-    answer_data = AnswerData(
+    # Same scoring, streak, leaderboard and room-scoped emits as Socket.IO players
+    answer_data = await record_answer(
+        game_pin=game_pin,
+        game_data=game,
+        question_index=game.current_question,
         username=username,
+        answer_right=answer_right,
         answer=stored_answer,
-        right=answer_right,
-        time_taken=abs(diff),
-        score=score,
+        time_taken_ms=abs(diff),
     )
-    answer_count = await set_answer(game_pin=game_pin, q_index=game.current_question, data=answer_data)
-    player_count = await redis.scard(f"game_session:{game_pin}:players")
-    await sio.emit("player_answer", {})
-    if answer_count == player_count:
-        game.question_show = False
-        await game.save(game_pin)
-        await sio.emit("everyone_answered", {})
+    if answer_data is None:
+        print("already answerered")
+        return
+    await redis.set(f"answer_given:{player_id}:{game.current_question}", "True", ex=600)
 
 
 button_to_index_map = {"b": 0, "y": 1, "g": 2, "r": 3}
@@ -107,6 +93,7 @@ async def websocket_endpoint(ws: WebSocket, game_id: str):
             f"game_session:{game_pin}:players",
             GamePlayer(username=username, sid=None).model_dump_json(),
         )
+        await redis.zadd(f"game_session:{game_pin}:leaderboard", {username: 0}, nx=True)
 
         while True:
             raw_data = await ws.receive_text()

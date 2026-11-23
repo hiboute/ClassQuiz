@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 import aiohttp
-from classquiz.config import settings
+from classquiz.config import settings, redis
 from classquiz.db.models import (
     PlayGame,
     QuizQuestionType,
@@ -10,7 +10,6 @@ from classquiz.db.models import (
     ABCDQuizAnswer,
     VotingQuizAnswer,
     RangeQuizAnswer,
-    AnswerDataList,
 )
 from classquiz.socket_server.models import SubmitAnswerData
 from .models import SubmitAnswerDataOrderType
@@ -130,10 +129,25 @@ def check_check_question(answer: str, answers: list[ABCDQuizAnswer]) -> bool:
     return bool(correct_string == answer)
 
 
+ANSWER_KEY_TTL = 7200
+
+
+def answered_key(game_pin: str, q_index: int) -> str:
+    return f"game_session:{game_pin}:{q_index}:answered"
+
+
+async def mark_answered(game_pin: str, q_index: int, username: str) -> bool:
+    """Atomically record that `username` answered; False if they already had.
+
+    One SADD on a per-question set replaces reading and parsing every answer
+    of the question (O(players) per submit, O(players^2) per question).
+    """
+    key = answered_key(game_pin, q_index)
+    added = await redis.sadd(key, username)
+    await redis.expire(key, ANSWER_KEY_TTL)
+    return added == 1
+
+
 async def has_already_answered(game_pin: str, q_index: int, username: str) -> bool:
-    answers = await AnswerDataList.get_redis_or_empty(game_pin, q_index)
-    if answers is None:
-        return False
-    else:
-        answers = list(filter(lambda a: a.username == username, answers.root))
-        return len(answers) > 0
+    """Read-only check, kept for callers that only need to know."""
+    return bool(await redis.sismember(answered_key(game_pin, q_index), username))

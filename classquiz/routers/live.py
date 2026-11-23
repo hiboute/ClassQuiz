@@ -22,6 +22,7 @@ from classquiz.db.models import (
     AnswerDataList,
 )
 from classquiz.auth import check_api_key
+from classquiz.helpers.nickname import random_nickname
 from classquiz.socket_server import ReturnQuestion, sio
 
 settings = settings()
@@ -277,3 +278,19 @@ async def voting_results(game_pin: str, api_key: str, as_array: bool = False):
         return [answer_dict]
     else:
         return answer_dict
+
+
+class _RandomNickname(BaseModel):
+    nickname: str
+
+
+@router.get("/random_nickname", response_model=_RandomNickname)
+async def get_random_nickname(game_pin: str | None = None):
+    """A friendly random nickname (adjective + noun) not yet taken in `game_pin`."""
+    nickname = random_nickname()
+    if game_pin:
+        for _ in range(10):
+            if await redis.get(f"game_session:{game_pin}:players:{nickname}") is None:
+                break
+            nickname = random_nickname()
+    return _RandomNickname(nickname=nickname)
