@@ -5,7 +5,12 @@
 /**
  * Shared labels and helpers of the quiz editor (sidebar, card, popup).
  */
-import { QuizQuestionType, type Question, type QuestionPoints } from '$lib/quiz_types';
+import {
+	QuizQuestionType,
+	type Answers,
+	type Question,
+	type QuestionPoints
+} from '$lib/quiz_types';
 import { dataSchema } from '$lib/yupSchemas';
 import type { Schema } from 'yup';
 
@@ -113,4 +118,201 @@ export const plainText = (html: string | undefined | null): string => {
 		.replace(/&#39;/g, "'")
 		.replace(/\s+/g, ' ')
 		.trim();
+};
+
+/** Look of the little picture of a question type (add popup, type sheet). */
+export type TypePreviewKind =
+	'tiles' | 'truefalse' | 'check' | 'cloud' | 'poll' | 'order' | 'text' | 'range';
+
+/** One entry of the "add a question" choices. */
+export interface QuestionChoice {
+	key: string;
+	name: string;
+	/** long description (desktop popup) */
+	description: string;
+	/** one short line (phone type sheet) */
+	blurb: string;
+	type: QuizQuestionType;
+	preview: TypePreviewKind;
+	answers: () => Answers;
+	time?: string;
+}
+
+export const QUESTION_CHOICES: QuestionChoice[] = [
+	{
+		key: 'abcd',
+		name: typeMeta(QuizQuestionType.ABCD).name,
+		description: typeMeta(QuizQuestionType.ABCD).description,
+		blurb: 'Up to 4 answers, one or more correct',
+		type: QuizQuestionType.ABCD,
+		preview: 'tiles',
+		answers: () => [
+			{ answer: '', right: true },
+			{ answer: '', right: false },
+			{ answer: '', right: false },
+			{ answer: '', right: false }
+		]
+	},
+	{
+		key: 'truefalse',
+		name: 'True or false',
+		description: 'Two answers, True and False. Quick to write, quick to play.',
+		blurb: 'Two answers, quick to write',
+		type: QuizQuestionType.ABCD,
+		preview: 'truefalse',
+		time: '10',
+		answers: () => [
+			{ answer: 'True', right: true },
+			{ answer: 'False', right: false }
+		]
+	},
+	{
+		key: 'cloud',
+		name: typeMeta(QuizQuestionType.WORD_CLOUD).name,
+		description: 'Word cloud: players type a short word, the screen shows a live cloud.',
+		blurb: 'Players type a word, live cloud',
+		type: QuizQuestionType.WORD_CLOUD,
+		preview: 'cloud',
+		time: '30',
+		answers: () => []
+	},
+	{
+		key: 'check',
+		name: typeMeta(QuizQuestionType.CHECK).name,
+		description: typeMeta(QuizQuestionType.CHECK).description,
+		blurb: 'Players tick every correct answer',
+		type: QuizQuestionType.CHECK,
+		preview: 'check',
+		answers: () => [
+			{ answer: '', right: true },
+			{ answer: '', right: true },
+			{ answer: '', right: false },
+			{ answer: '', right: false }
+		]
+	},
+	{
+		key: 'poll',
+		name: typeMeta(QuizQuestionType.VOTING).name,
+		description: typeMeta(QuizQuestionType.VOTING).description,
+		blurb: 'A vote, no correct answer, no points',
+		type: QuizQuestionType.VOTING,
+		preview: 'poll',
+		answers: () => [
+			{ answer: '', image: undefined },
+			{ answer: '', image: undefined }
+		]
+	},
+	{
+		key: 'order',
+		name: typeMeta(QuizQuestionType.ORDER).name,
+		description: typeMeta(QuizQuestionType.ORDER).description,
+		blurb: 'Drag the items into order',
+		type: QuizQuestionType.ORDER,
+		preview: 'order',
+		time: '30',
+		answers: () => [
+			{ answer: '', id: 0 },
+			{ answer: '', id: 1 },
+			{ answer: '', id: 2 }
+		]
+	},
+	{
+		key: 'text',
+		name: typeMeta(QuizQuestionType.TEXT).name,
+		description: typeMeta(QuizQuestionType.TEXT).description,
+		blurb: 'Players type it, list every spelling',
+		type: QuizQuestionType.TEXT,
+		preview: 'text',
+		time: '30',
+		answers: () => [{ answer: '', case_sensitive: false }]
+	},
+	{
+		key: 'range',
+		name: typeMeta(QuizQuestionType.RANGE).name,
+		description: typeMeta(QuizQuestionType.RANGE).description,
+		blurb: 'Pick a number, a range counts',
+		type: QuizQuestionType.RANGE,
+		preview: 'range',
+		answers: () => ({
+			max: 10,
+			min: 0,
+			max_correct: 7,
+			min_correct: 3
+		})
+	}
+];
+
+/** A new, empty question of the chosen type. */
+export const newQuestion = (c: QuestionChoice): Question => ({
+	type: c.type,
+	time: c.time ?? '20',
+	question: '',
+	image: undefined,
+	answers: c.answers(),
+	points: c.type === QuizQuestionType.WORD_CLOUD ? 'none' : 'standard'
+});
+
+/** A new content slide (designed in the slide editor). */
+export const newSlide = (): Question => ({
+	type: QuizQuestionType.SLIDE,
+	time: '120',
+	question: 'Slide',
+	image: undefined,
+	answers: ''
+});
+
+/** Rough length of a quiz in minutes: each question's time plus 15 s around it. */
+export const quizMinutes = (questions: Question[]): number =>
+	Math.max(
+		1,
+		Math.round(
+			questions.reduce(
+				(s, q) =>
+					s +
+					(q.type === QuizQuestionType.SLIDE
+						? 15
+						: (parseInt(String(q.time), 10) || 0) + 15),
+				0
+			) / 60
+		)
+	);
+
+/** True when the answers are exactly True and False (the true or false shortcut). */
+export const isTrueFalse = (answers: unknown): boolean =>
+	Array.isArray(answers) &&
+	answers.length === 2 &&
+	String(answers[0]?.answer ?? '')
+		.trim()
+		.toLowerCase() === 'true' &&
+	String(answers[1]?.answer ?? '')
+		.trim()
+		.toLowerCase() === 'false';
+
+/** Key of the QUESTION_CHOICES entry a question matches. */
+export const choiceKeyOf = (q: Question | undefined): string | null => {
+	switch (q?.type ?? QuizQuestionType.ABCD) {
+		case QuizQuestionType.ABCD:
+			return isTrueFalse(q?.answers) ? 'truefalse' : 'abcd';
+		case QuizQuestionType.CHECK:
+			return 'check';
+		case QuizQuestionType.VOTING:
+			return 'poll';
+		case QuizQuestionType.WORD_CLOUD:
+			return 'cloud';
+		case QuizQuestionType.ORDER:
+			return 'order';
+		case QuizQuestionType.TEXT:
+			return 'text';
+		case QuizQuestionType.RANGE:
+			return 'range';
+		default:
+			return null;
+	}
+};
+
+/** Display name of a question, true or false included. */
+export const questionTypeName = (q: Question | undefined): string => {
+	const key = choiceKeyOf(q);
+	if (key === 'truefalse') return 'True or false';
+	return typeMeta(q?.type).name;
 };

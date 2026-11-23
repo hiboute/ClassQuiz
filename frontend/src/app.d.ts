@@ -12,6 +12,11 @@ declare namespace App {
 		email: string | null;
 	}
 
+	interface PageState {
+		/** phone quiz editor: index of the question open on its own screen */
+		mq?: number;
+	}
+
 	// interface Platform {}
 
 	// interface Stuff {}

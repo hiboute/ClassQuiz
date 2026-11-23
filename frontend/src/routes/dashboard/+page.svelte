@@ -17,6 +17,7 @@ SPDX-License-Identifier: MPL-2.0
 	import Analytics from './Analytics.svelte';
 	import PageHeader from '$lib/components/organiser/PageHeader.svelte';
 	import QuizCard from './QuizCard.svelte';
+	import MobileQuizCard from './MobileQuizCard.svelte';
 
 	interface Props {
 		data: PageData;
@@ -83,32 +84,35 @@ SPDX-License-Identifier: MPL-2.0
 <Analytics bind:quiz={analytics_quiz_selected} />
 <CommandpaletteNotice />
 
-<main class="min-h-[calc(100dvh-4rem)] w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-14 pb-16">
+<main class="min-h-[calc(100dvh-4rem)] w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-14 pb-16 max-md:pb-32">
 	<PageHeader
 		eyebrow="Organiser dashboard"
 		kicker="Live Quiz"
 		headline="Your quizzes"
 	>
 		{#snippet actions()}
-			<a href="/create" class="bt-btn-primary">
+			<a href="/create" class="bt-btn-primary max-md:hidden">
 				<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"
 					><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg
 				>
 				{$t('dashboard.create_quiz')}
 			</a>
-			<a href="/import" class="bt-btn-ghost">{$t('words.import')}</a>
+			<a href="/import" class="bt-btn-ghost max-md:hidden">{$t('words.import')}</a>
 		{/snippet}
-		<nav class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="Organiser pages">
-			<a href="/results" class="text-ink-muted hover:text-ink underline-offset-4 hover:underline"
+		<nav class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm max-md:mt-2 max-md:gap-y-0 max-md:text-[15px]" aria-label="Organiser pages">
+			<a href="/results" class="text-ink-muted hover:text-ink underline-offset-4 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center"
 				>{$t('words.results')}</a
 			>
-			<a href="/edit/files" class="text-ink-muted hover:text-ink underline-offset-4 hover:underline"
+			<a href="/edit/files" class="text-ink-muted hover:text-ink underline-offset-4 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center"
 				>{$t('words.files_library')}</a
 			>
 			<a
 				href="/account/settings"
-				class="text-ink-muted hover:text-ink underline-offset-4 hover:underline"
+				class="text-ink-muted hover:text-ink underline-offset-4 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center"
 				>{$t('words.settings')}</a
+			>
+			<a href="/import" class="text-ink-muted hover:text-ink underline-offset-4 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center md:hidden"
+				>{$t('words.import')}</a
 			>
 		</nav>
 	</PageHeader>
@@ -127,7 +131,7 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		</section>
 	{:else}
-		<div class="mt-10 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+		<div class="mt-10 flex flex-col sm:flex-row sm:items-center gap-4 justify-between max-md:mt-6">
 			<div class="relative w-full sm:max-w-md">
 				<svg
 					class="absolute start-5 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-muted pointer-events-none"
@@ -170,7 +174,25 @@ SPDX-License-Identifier: MPL-2.0
 		{#if items_to_show.length === 0}
 			<p class="mt-10 text-ink-muted">No quiz matches "{search_term}".</p>
 		{:else}
-			<ul class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+			<!-- phone: compact cards, the rest of the actions in a sheet -->
+			<ul class="mt-5 flex flex-col gap-3 md:hidden">
+				{#each items_to_show as item, i (item.type + item.id)}
+					<li>
+						<MobileQuizCard
+							{item}
+							index={i}
+							onstart={() => {
+								start_item = item;
+								start_game = item.id;
+							}}
+							onanalytics={() => (analytics_quiz_selected = item)}
+							ondownload={() => (download_id = item.id)}
+							ondelete={() => deleteQuiz(item)}
+						/>
+					</li>
+				{/each}
+			</ul>
+			<ul class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 max-md:hidden">
 				{#each items_to_show as item (item.type + item.id)}
 					<li>
 						<QuizCard
@@ -189,6 +211,14 @@ SPDX-License-Identifier: MPL-2.0
 		{/if}
 	{/if}
 </main>
+<div class="new-bar md:hidden">
+	<a href="/create" class="bt-btn-primary bt-btn-block new-btn">
+		<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"
+			><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg
+		>
+		New quiz
+	</a>
+</div>
 <Footer />
 {#if start_game !== null}
 	<StartGamePopup
@@ -198,3 +228,27 @@ SPDX-License-Identifier: MPL-2.0
 	/>
 {/if}
 <DownloadQuiz bind:quiz_id={download_id} />
+
+<style>
+	/* phone: the New quiz button stays at the thumb */
+	.new-bar {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 20;
+		padding: 24px 16px max(14px, env(safe-area-inset-bottom));
+		background: linear-gradient(
+			to bottom,
+			rgba(9, 9, 36, 0) 0,
+			rgba(9, 9, 36, 0.86) 34%,
+			rgba(9, 9, 36, 0.96)
+		);
+		pointer-events: none;
+	}
+	.new-btn {
+		min-height: 56px;
+		font-size: 17px;
+		pointer-events: auto;
+	}
+</style>

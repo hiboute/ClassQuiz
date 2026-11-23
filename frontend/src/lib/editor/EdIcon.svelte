@@ -26,7 +26,13 @@ SPDX-License-Identifier: MPL-2.0
 		| 'palette'
 		| 'search'
 		| 'video'
-		| 'folder';
+		| 'folder'
+		| 'back'
+		| 'left'
+		| 'right'
+		| 'more'
+		| 'pencil'
+		| 'sliders';
 
 	interface Props {
 		name: Name;
@@ -86,7 +92,22 @@ SPDX-License-Identifier: MPL-2.0
 		],
 		search: ['M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z', 'M20 20l-4-4'],
 		video: ['M4 7h11v10H4z', 'M15 10.5l5-3v9l-5-3'],
-		folder: ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z']
+		folder: ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'],
+		back: ['M19 12H5', 'M12 19l-7-7 7-7'],
+		left: ['M15 18l-6-6 6-6'],
+		right: ['M9 18l6-6-6-6'],
+		more: ['M5 12h.01', 'M12 12h.01', 'M19 12h.01'],
+		pencil: ['M4 20h4L19 9l-4-4L4 16z', 'M13.5 6.5l4 4'],
+		sliders: [
+			'M4 6h10',
+			'M18 6h2',
+			'M4 12h4',
+			'M12 12h8',
+			'M4 18h12',
+			'M18 6a2 2 0 1 0 0 .01',
+			'M12 12a2 2 0 1 0 0 .01',
+			'M20 18a2 2 0 1 0 0 .01'
+		]
 	};
 </script>
 
