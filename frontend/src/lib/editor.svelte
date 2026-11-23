@@ -15,6 +15,8 @@ SPDX-License-Identifier: MPL-2.0
 	import World from '$lib/brand/World.svelte';
 	import { plainText, questionIssue } from '$lib/editor/editor_meta';
 	import { getLocalization } from '$lib/i18n';
+	import { MediaQuery } from 'svelte/reactivity';
+	import MobileEditor from '$lib/editor/mobile/MobileEditor.svelte';
 
 	const { t } = getLocalization();
 
@@ -29,6 +31,8 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { data = $bindable(), quiz_id = $bindable() }: Props = $props();
+	// below the md breakpoint the phone layout takes over (same data and save)
+	const phone = new MediaQuery('max-width: 767.98px', false);
 	let selected_question = $state(-1);
 
 	const validateInput = async (snapshot: EditorData) => {
@@ -78,8 +82,8 @@ SPDX-License-Identifier: MPL-2.0
 		localStorage.setItem('edit_game', JSON.stringify(data));
 		return 'unload';
 	};
-	const saveQuiz = async (e: Event) => {
-		e.preventDefault();
+	const saveQuiz = async (e?: Event) => {
+		e?.preventDefault();
 		if (schemaInvalid || saving) {
 			return;
 		}
@@ -125,69 +129,79 @@ SPDX-License-Identifier: MPL-2.0
 			<Loading label="Opening the editor" />
 		</div>
 	{:then _}
-		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-		<form
-			onsubmit={saveQuiz}
-			onkeydown={(e) => {
-				// Enter in a text field must not save and leave the editor
-				if (e.key === 'Enter' && (e.target as HTMLElement)?.tagName === 'INPUT') {
-					e.preventDefault();
-				}
-			}}
-			class="grid h-full grid-rows-[minmax(0,38vh)_minmax(0,1fr)] md:grid-rows-1 md:grid-cols-[264px_minmax(0,1fr)] xl:grid-cols-[312px_minmax(0,1fr)]"
-		>
-			<aside class="min-h-0">
-				<Sidebar bind:data bind:selected_question />
-			</aside>
-			<main class="flex min-h-0 min-w-0 flex-col">
-				<header class="flex flex-wrap items-center gap-x-5 gap-y-2 px-5 pt-5 pb-3 lg:px-8">
-					<div class="min-w-[180px] flex-1">
-						<span class="bt-eyebrow text-[11px] text-ink-muted">
-							Quiz editor{#if quiz_id === null}, new quiz{/if}
-						</span>
-						<h1 class="truncate text-xl leading-tight font-black uppercase lg:text-2xl">
-							{title_text || 'Untitled quiz'}
-						</h1>
+		{#if phone.current}
+			<MobileEditor
+				bind:data
+				bind:edit_id
+				schema_invalid={schemaInvalid}
+				{saving}
+				onsave={() => saveQuiz()}
+			/>
+		{:else}
+			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+			<form
+				onsubmit={saveQuiz}
+				onkeydown={(e) => {
+					// Enter in a text field must not save and leave the editor
+					if (e.key === 'Enter' && (e.target as HTMLElement)?.tagName === 'INPUT') {
+						e.preventDefault();
+					}
+				}}
+				class="grid h-full grid-rows-[minmax(0,38vh)_minmax(0,1fr)] md:grid-rows-1 md:grid-cols-[264px_minmax(0,1fr)] xl:grid-cols-[312px_minmax(0,1fr)]"
+			>
+				<aside class="min-h-0">
+					<Sidebar bind:data bind:selected_question />
+				</aside>
+				<main class="flex min-h-0 min-w-0 flex-col">
+					<header class="flex flex-wrap items-center gap-x-5 gap-y-2 px-5 pt-5 pb-3 lg:px-8">
+						<div class="min-w-[180px] flex-1">
+							<span class="bt-eyebrow text-[11px] text-ink-muted">
+								Quiz editor{#if quiz_id === null}, new quiz{/if}
+							</span>
+							<h1 class="truncate text-xl leading-tight font-black uppercase lg:text-2xl">
+								{title_text || 'Untitled quiz'}
+							</h1>
+						</div>
+						<button
+							type="button"
+							class="order-last flex w-full max-w-full items-center gap-2 rounded-full px-4 py-2 text-left text-sm xl:order-none xl:w-auto"
+							class:status-bad={schemaInvalid}
+							class:status-good={!schemaInvalid}
+							aria-live="polite"
+							title={schemaInvalid ? 'Show me' : undefined}
+							onclick={go_to_issue}
+						>
+							<EdIcon name={schemaInvalid ? 'warn' : 'check'} size={16} />
+							<span class="truncate">
+								{#if schemaInvalid}
+									{#if first_issue && !yupErrorMessage.match(/title|description/i)}Question {first_issue.index +
+											1}: {first_issue.issue}{:else}{yupErrorMessage}{/if}{#if errorCount > 1}<span
+											class="opacity-70"
+										>
+											(+{errorCount - 1} more)</span
+										>{/if}
+								{:else}
+									Ready to save, {question_count}
+									{question_count === 1 ? 'question' : 'questions'}
+								{/if}
+							</span>
+						</button>
+						<a href="/dashboard" class="bt-btn-ghost exit-btn">Exit</a>
+						<button class="bt-btn-primary" disabled={schemaInvalid || saving} type="submit">
+							<EdIcon name="save" size={18} />
+							<span>{saving ? 'Saving' : $t('words.save')}</span>
+						</button>
+					</header>
+					<div class="min-h-0 flex-1 overflow-y-auto px-5 pb-8 lg:px-8">
+						{#if selected_question === -1}
+							<SettingsCard bind:data bind:edit_id />
+						{:else}
+							<QuizCard bind:data bind:selected_question bind:edit_id />
+						{/if}
 					</div>
-					<button
-						type="button"
-						class="order-last flex w-full max-w-full items-center gap-2 rounded-full px-4 py-2 text-left text-sm xl:order-none xl:w-auto"
-						class:status-bad={schemaInvalid}
-						class:status-good={!schemaInvalid}
-						aria-live="polite"
-						title={schemaInvalid ? 'Show me' : undefined}
-						onclick={go_to_issue}
-					>
-						<EdIcon name={schemaInvalid ? 'warn' : 'check'} size={16} />
-						<span class="truncate">
-							{#if schemaInvalid}
-								{#if first_issue && !yupErrorMessage.match(/title|description/i)}Question {first_issue.index +
-										1}: {first_issue.issue}{:else}{yupErrorMessage}{/if}{#if errorCount > 1}<span
-										class="opacity-70"
-									>
-										(+{errorCount - 1} more)</span
-									>{/if}
-							{:else}
-								Ready to save, {question_count}
-								{question_count === 1 ? 'question' : 'questions'}
-							{/if}
-						</span>
-					</button>
-					<a href="/dashboard" class="bt-btn-ghost exit-btn">Exit</a>
-					<button class="bt-btn-primary" disabled={schemaInvalid || saving} type="submit">
-						<EdIcon name="save" size={18} />
-						<span>{saving ? 'Saving' : $t('words.save')}</span>
-					</button>
-				</header>
-				<div class="min-h-0 flex-1 overflow-y-auto px-5 pb-8 lg:px-8">
-					{#if selected_question === -1}
-						<SettingsCard bind:data bind:edit_id />
-					{:else}
-						<QuizCard bind:data bind:selected_question bind:edit_id />
-					{/if}
-				</div>
-			</main>
-		</form>
+				</main>
+			</form>
+		{/if}
 	{/await}
 </World>
 
