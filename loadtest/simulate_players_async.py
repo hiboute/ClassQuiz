@@ -248,7 +248,9 @@ class Api:
     def call(self, method: str, path: str, body=None):
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(self.base + path, data=data, method=method,
-                                     headers={"Content-Type": "application/json"})
+                                     headers={"Content-Type": "application/json",
+                                              # Cloudflare bans the default Python-urllib agent (error 1010)
+                                              "User-Agent": "cq-loadtest/1.0"})
         with self.opener.open(req, timeout=30) as r:
             raw = r.read()
             return json.loads(raw) if raw else None
