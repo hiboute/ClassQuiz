@@ -5,19 +5,11 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import { run, preventDefault } from 'svelte/legacy';
-
 	import type { Answer, EditorData } from '../quiz_types';
 	import { QuizQuestionType } from '../quiz_types';
 	import { fade } from 'svelte/transition';
-	import { reach } from 'yup';
-	import { ABCDQuestionSchema } from '$lib/yupSchemas';
-	import { getLocalization } from '$lib/i18n';
-	import { get_foreground_color } from '$lib/helpers';
-
-	const { t } = getLocalization();
-
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
+	import AnswerTile from '$lib/editor/AnswerTile.svelte';
+	import EdIcon from '$lib/editor/EdIcon.svelte';
 
 	interface Props {
 		selected_question: number;
@@ -26,153 +18,158 @@ SPDX-License-Identifier: MPL-2.0
 	}
 
 	let { selected_question, check_choice = false, data = $bindable() }: Props = $props();
+
 	if (!Array.isArray(data.questions[selected_question].answers)) {
 		data.questions[selected_question].answers = [];
 	}
-	const save_colors = (data_local: EditorData) => {
-		if (selected_question === 0) {
-			for (let i = 0; i < data_local.questions[selected_question].answers.length; i++) {
-				localStorage.setItem(
-					`quiz_color:${i}:${data_local.title}`,
-					data_local.questions[selected_question].answers[i].color
-				);
-			}
-		}
-	};
-
-	const get_empty_answer = (i: number): Answer => {
-		return {
-			answer: '',
-			color: default_colors[i],
-			right: false
-		};
-	};
-	run(() => {
-		save_colors(data);
-	});
 	data.questions[selected_question].type =
 		check_choice === true ? QuizQuestionType.CHECK : QuizQuestionType.ABCD;
-	const set_colors_if_unset = () => {
-		for (let i = 0; i < data.questions[selected_question].answers.length; i++) {
-			if (!data.questions[selected_question].answers[i].color) {
-				data.questions[selected_question].answers[i].color = default_colors[i];
-			}
-		}
+
+	const answers = $derived(data.questions[selected_question].answers as Answer[]);
+	const right_count = $derived(answers.filter((a) => a.right).length);
+	const is_true_false = $derived(
+		answers.length === 2 &&
+			answers[0].answer.trim().toLowerCase() === 'true' &&
+			answers[1].answer.trim().toLowerCase() === 'false'
+	);
+
+	const add_answer = () => {
+		data.questions[selected_question].answers = [
+			...answers,
+			{ answer: '', right: false }
+		];
 	};
-	run(() => {
-		set_colors_if_unset();
-		data;
-		selected_question;
-	});
+	const remove_answer = (index: number) => {
+		const arr = [...answers];
+		arr.splice(index, 1);
+		data.questions[selected_question].answers = arr;
+	};
+	const set_true_false = () => {
+		if (
+			answers.some((a) => a.answer.trim() !== '') &&
+			!confirm('Replace the answers with True and False?')
+		) {
+			return;
+		}
+		data.questions[selected_question].answers = [
+			{ answer: 'True', right: true },
+			{ answer: 'False', right: false }
+		];
+	};
+	const switch_mode = () => {
+		data.questions[selected_question].type = check_choice
+			? QuizQuestionType.ABCD
+			: QuizQuestionType.CHECK;
+	};
 </script>
 
-<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-4 w-full px-10">
-	{#if Array.isArray(data.questions[selected_question].answers)}
-		{#each data.questions[selected_question].answers as answer, index}
-			<div
-				out:fade={{ duration: 150 }}
-				class="p-4 rounded-lg flex justify-center w-full transition relative"
-				class:bg-red-500={!answer.right}
-				class:bg-green-500={answer.right}
-				class:bg-yellow-500={!reach(ABCDQuestionSchema, 'answer').isValidSync(
-					answer.answer
-				)}
+<div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+	<span class="bt-eyebrow text-[11px] text-ink-muted">Answers</span>
+	<span class="text-xs text-ink-muted">
+		{#if check_choice}
+			Players tick every correct answer.
+		{:else}
+			Tap the check on each correct answer.
+		{/if}
+	</span>
+	<span class="ml-auto flex flex-wrap gap-2">
+		{#if !check_choice}
+			<button
+				type="button"
+				class="mini-btn"
+				class:mini-on={is_true_false}
+				onclick={set_true_false}
+				title="Two answers: True and False"
 			>
-				<button
-					class="rounded-full absolute -top-2 -right-2 opacity-70 hover:opacity-100 transition"
-					type="button"
-					onclick={() => {
-						data.questions[selected_question].answers.splice(index, 1);
-						data.questions[selected_question].answers =
-							data.questions[selected_question].answers;
-					}}
-				>
-					<svg
-						class="w-6 h-6 bg-red-500 rounded-full"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-				</button>
-				<input
-					bind:value={answer.answer}
-					type="text"
-					class="border-b-2 border-dotted w-5/6 text-center rounded-lg bg-transparent outline-hidden focus:shadow-2xl transition-all"
-					style="background-color: {answer.color}; color: {get_foreground_color(
-						answer.color
-					)}"
-					placeholder={$t('editor.enter_answer')}
-				/>
-				<button
-					type="button"
-					onclick={() => {
-						answer.right = !answer.right;
-					}}
-				>
-					{#if answer.right}
-						<svg
-							class="w-6 h-6 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-					{:else}
-						<svg
-							class="w-6 h-6 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-					{/if}
-				</button>
-				<input
-					class="rounded-lg p-1 border-black border"
-					type="color"
-					bind:value={answer.color}
-					oncontextmenu={preventDefault(() => {
-						answer.color = default_colors[index];
-					})}
-				/>
-			</div>
-		{/each}
-	{/if}
-	{#if data.questions[selected_question].answers.length < 4}
+				True / False
+			</button>
+		{/if}
 		<button
-			class="p-4 rounded-lg bg-transparent border-gray-500 border-2 hover:bg-gray-300 transition dark:hover:bg-gray-600"
 			type="button"
-			in:fade={{ duration: 150 }}
-			onclick={() => {
-				data.questions[selected_question].answers = [
-					...data.questions[selected_question].answers,
-					{ ...get_empty_answer(data.questions[selected_question].answers.length) }
-				];
-			}}
+			class="mini-btn"
+			onclick={switch_mode}
+			title={check_choice
+				? 'Players pick one answer'
+				: 'Players can tick several answers'}
 		>
-			<span class="italic text-center">{$t('editor_page.add_an_answer')}</span>
+			{check_choice ? 'Single pick' : 'Multiple select'}
+		</button>
+	</span>
+</div>
+
+<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+	{#each answers as _answer, index (index)}
+		<div out:fade={{ duration: 120 }}>
+			<AnswerTile
+				bind:answer={data.questions[selected_question].answers[index]}
+				{index}
+				check_style={check_choice}
+				placeholder={is_true_false ? undefined : `Answer ${index + 1}`}
+				removable={answers.length > 1}
+				onremove={() => remove_answer(index)}
+			/>
+		</div>
+	{/each}
+	{#if answers.length < 4}
+		<button class="add-tile" type="button" in:fade={{ duration: 120 }} onclick={add_answer}>
+			<EdIcon name="plus" size={20} stroke={2.5} />
+			<span>Add an answer</span>
 		</button>
 	{/if}
 </div>
+
+{#if answers.length > 0 && right_count === 0}
+	<p class="hint-warn mt-3">
+		<EdIcon name="warn" size={15} /> Mark at least one answer as correct, or nobody can score.
+	</p>
+{/if}
+
+<style>
+	.mini-btn {
+		height: 32px;
+		padding: 0 14px;
+		border-radius: 999px;
+		background: var(--fill-glass);
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 1.5px;
+		text-transform: uppercase;
+	}
+	.mini-btn:hover {
+		background: var(--fill-glass-strong);
+	}
+	.mini-on {
+		box-shadow: inset 0 0 0 2px var(--accent-sky);
+	}
+	.mini-btn:focus-visible,
+	.add-tile:focus-visible {
+		outline: 3px solid var(--accent-sky-tint);
+		outline-offset: 2px;
+	}
+	.add-tile {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		min-height: 92px;
+		border-radius: 25px;
+		background: var(--fill-glass);
+		color: var(--ink-muted);
+		font-weight: 700;
+		letter-spacing: 2px;
+		text-transform: uppercase;
+		font-size: 13px;
+		transition: background-color 120ms ease;
+	}
+	.add-tile:hover {
+		background: var(--fill-glass-mid);
+		color: var(--ink);
+	}
+	.hint-warn {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13px;
+		color: #ffd3fb;
+	}
+</style>

@@ -75,11 +75,13 @@ SPDX-License-Identifier: MPL-2.0
 	});
 </script>
 
-<div class="flex flex-row justify-evenly z-40">
-	<div>
+<div class="z-40 flex flex-row items-center gap-1 rounded-full bg-[var(--fill-glass)] p-1">
+	<div class="relative">
 		<button
 			type="button"
-			class="disabled:opacity-50 transition"
+			class="ebtn"
+			title="Colour"
+			aria-label="Colour"
 			disabled={!(
 				available_modifiers.includes('fill_color') ||
 				available_modifiers.includes('text_color')
@@ -108,17 +110,19 @@ SPDX-License-Identifier: MPL-2.0
 		</button>
 		{#if opened_dropdown === 'color'}
 			<div
-				class="bg-white m-auto rounded-lg shadow-lg p-4 dark:bg-gray-600 h-fit gap-2 w-fit auto-cols-min flex absolute z-40"
+				class="pop absolute z-40 mt-2 flex h-fit w-fit gap-2 p-3"
 				transition:fade|global={{ duration: 100 }}
 			>
 				<input type="color" onchange={change_color} />
 			</div>
 		{/if}
 	</div>
-	<div>
+	<div class="relative">
 		<button
 			type="button"
-			class="disabled:opacity-50 transition"
+			class="ebtn"
+			title="Font size"
+			aria-label="Font size"
 			onclick={() => {
 				toggle_switch('font_size');
 			}}
@@ -144,7 +148,7 @@ SPDX-License-Identifier: MPL-2.0
 		</button>
 		{#if opened_dropdown === 'font_size'}
 			<div
-				class="bg-white m-auto rounded-lg shadow-lg p-4 dark:bg-gray-600 h-fit gap-2 w-fit auto-cols-min flex absolute z-40"
+				class="pop absolute z-40 mt-2 flex h-fit w-fit gap-2 p-3"
 				transition:fade|global={{ duration: 100 }}
 			>
 				<input
@@ -157,13 +161,15 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		{/if}
 	</div>
-	<div class="flex flex-row gap-2">
+	<div class="flex flex-row gap-1">
 		<button
 			type="button"
-			class="disabled:opacity-50 transition"
+			class="ebtn"
 			onclick={() => {
 				selected_el.update({ zIndex: selected_el.node.getZIndex() + 1 });
 			}}
+			title="Bring forward"
+			aria-label="Bring forward"
 			disabled={!selected_el}
 		>
 			<!-- iconoir/priority-up -->
@@ -186,10 +192,12 @@ SPDX-License-Identifier: MPL-2.0
 		</button>
 		<button
 			type="button"
-			class="disabled:opacity-50 transition"
+			class="ebtn"
 			onclick={() => {
 				selected_el.update({ zIndex: selected_el.node.getZIndex() - 1 });
 			}}
+			title="Send backward"
+			aria-label="Send backward"
 			disabled={!selected_el}
 		>
 			<!-- iconoir/priority-down -->
@@ -212,3 +220,34 @@ SPDX-License-Identifier: MPL-2.0
 		</button>
 	</div>
 </div>
+
+<style>
+	.ebtn {
+		display: grid;
+		place-items: center;
+		width: 36px;
+		height: 36px;
+		border-radius: 999px;
+		color: var(--ink);
+		transition: background-color 120ms ease;
+	}
+	.ebtn:hover:not(:disabled) {
+		background: var(--fill-glass-strong);
+	}
+	.ebtn:disabled {
+		opacity: 0.35;
+		cursor: not-allowed;
+	}
+	.ebtn :global(svg) {
+		width: 20px;
+		height: 20px;
+	}
+	.pop {
+		border-radius: 18px;
+		background: rgba(14, 10, 46, 0.95);
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+	}
+	.pop input[type='range'] {
+		accent-color: var(--accent-sky);
+	}
+</style>

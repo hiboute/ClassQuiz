@@ -6,38 +6,46 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { dataSchema } from '$lib/yupSchemas';
-	import type { EditorData, Question } from './quiz_types';
+	import type { EditorData } from './quiz_types';
 	import Sidebar from '$lib/editor/sidebar.svelte';
 	import SettingsCard from '$lib/editor/settings-card.svelte';
 	import QuizCard from '$lib/editor/card.svelte';
-	import Spinner from './Spinner.svelte';
+	import Loading from '$lib/editor/Loading.svelte';
+	import EdIcon from '$lib/editor/EdIcon.svelte';
+	import World from '$lib/brand/World.svelte';
+	import { plainText, questionIssue } from '$lib/editor/editor_meta';
 	import { getLocalization } from '$lib/i18n';
 
 	const { t } = getLocalization();
 
 	let schemaInvalid = $state(false);
 	let yupErrorMessage = $state('');
+	let errorCount = $state(0);
+	let saving = $state(false);
 
 	interface Props {
 		data: EditorData;
 		quiz_id: string | null;
 	}
 
-	let { data = $bindable(), quiz_id }: Props = $props();
+	let { data = $bindable(), quiz_id = $bindable() }: Props = $props();
 	let selected_question = $state(-1);
 
-	const validateInput = async (data: EditorData) => {
+	const validateInput = async (snapshot: EditorData) => {
 		try {
-			await dataSchema.validate(data, { abortEarly: false });
+			await dataSchema.validate(snapshot, { abortEarly: false });
 			schemaInvalid = false;
 			yupErrorMessage = '';
+			errorCount = 0;
 		} catch (err) {
 			schemaInvalid = true;
-			yupErrorMessage = err.errors ? err.errors[0] : '';
+			yupErrorMessage = err?.errors ? err.errors[0] : 'Something in the quiz is not valid';
+			errorCount = err?.errors?.length ?? 1;
 		}
 	};
 	$effect(() => {
-		validateInput(data);
+		// snapshot reads the whole quiz, so any edit re-validates
+		validateInput($state.snapshot(data) as EditorData);
 	});
 	let edit_id: string = $state();
 	let confirm_to_leave = true;
@@ -57,7 +65,7 @@ SPDX-License-Identifier: MPL-2.0
 			const json = await res.json();
 			edit_id = json.token;
 		} else {
-			alert('Error!');
+			alert('Could not open the editor. Please reload the page.');
 		}
 	};
 
@@ -72,9 +80,10 @@ SPDX-License-Identifier: MPL-2.0
 	};
 	const saveQuiz = async (e: Event) => {
 		e.preventDefault();
-		if (schemaInvalid) {
+		if (schemaInvalid || saving) {
 			return;
 		}
+		saving = true;
 		const res = await fetch(`/api/v1/editor/finish?edit_id=${edit_id}`, {
 			method: 'POST',
 			headers: {
@@ -84,65 +93,117 @@ SPDX-License-Identifier: MPL-2.0
 		});
 		if (res.ok) {
 			confirm_to_leave = false;
-			console.log(confirm_to_leave);
 			window.location.href = '/dashboard';
 		} else {
-			alert('Error');
+			saving = false;
+			alert('The quiz could not be saved. Check the highlighted fields and try again.');
 		}
 	};
+
+	const title_text = $derived(plainText(data.title));
+	// where the first problem is, so the status can jump to it
+	const first_issue = $derived.by(() => {
+		for (let i = 0; i < data.questions.length; i++) {
+			const issue = questionIssue(data.questions[i]);
+			if (issue) return { index: i, issue };
+		}
+		return null;
+	});
+	const go_to_issue = () => {
+		if (!schemaInvalid) return;
+		selected_question = first_issue && !yupErrorMessage.match(/title|description/i)
+			? first_issue.index
+			: -1;
+	};
+	const question_count = $derived(data.questions.filter((q) => q.type !== 'SLIDE').length);
 </script>
 
 <svelte:window onbeforeunload={confirmUnload} />
-{#await getEditID()}
-	<Spinner />
-{:then _}
-	<form onsubmit={saveQuiz}>
-		<div class="grid grid-cols-6 h-screen w-screen">
-			<div>
+<World world="midnight" fullscreen={false} class="h-dvh">
+	{#await getEditID()}
+		<div class="grid h-full place-items-center">
+			<Loading label="Opening the editor" />
+		</div>
+	{:then _}
+		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+		<form
+			onsubmit={saveQuiz}
+			onkeydown={(e) => {
+				// Enter in a text field must not save and leave the editor
+				if (e.key === 'Enter' && (e.target as HTMLElement)?.tagName === 'INPUT') {
+					e.preventDefault();
+				}
+			}}
+			class="grid h-full grid-rows-[minmax(0,38vh)_minmax(0,1fr)] md:grid-rows-1 md:grid-cols-[264px_minmax(0,1fr)] xl:grid-cols-[312px_minmax(0,1fr)]"
+		>
+			<aside class="min-h-0">
 				<Sidebar bind:data bind:selected_question />
-			</div>
-			<div class="col-span-5 flex flex-col">
-				<div
-					class="h-10 w-full bg-white mb-10 flex align-middle justify-center rounded-br-lg"
-				>
-					{#if schemaInvalid}
-						<p class="text-center w-full text-red-600 h-full mt-0.5 font-semibold">
-							{yupErrorMessage}
-						</p>
-					{:else}
-						<p class="text-center w-full text-black h-full align-bottom mt-0.5">
-							{@html data.title}
-						</p>
-					{/if}
+			</aside>
+			<main class="flex min-h-0 min-w-0 flex-col">
+				<header class="flex flex-wrap items-center gap-x-5 gap-y-2 px-5 pt-5 pb-3 lg:px-8">
+					<div class="min-w-[180px] flex-1">
+						<span class="bt-eyebrow text-[11px] text-ink-muted">
+							Quiz editor{#if quiz_id === null}, new quiz{/if}
+						</span>
+						<h1 class="truncate text-xl leading-tight font-black uppercase lg:text-2xl">
+							{title_text || 'Untitled quiz'}
+						</h1>
+					</div>
 					<button
-						class="pr-2 align-middle bg-[#B07156] pl-2 ml-auto whitespace-nowrap disabled:opacity-60 rounded-br-lg"
-						disabled={schemaInvalid}
+						type="button"
+						class="order-last flex w-full max-w-full items-center gap-2 rounded-full px-4 py-2 text-left text-sm xl:order-none xl:w-auto"
+						class:status-bad={schemaInvalid}
+						class:status-good={!schemaInvalid}
+						aria-live="polite"
+						title={schemaInvalid ? 'Show me' : undefined}
+						onclick={go_to_issue}
 					>
-						<span>{$t('words.save')}</span>
-						<svg
-							class="w-6 h-6 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-							/>
-						</svg>
+						<EdIcon name={schemaInvalid ? 'warn' : 'check'} size={16} />
+						<span class="truncate">
+							{#if schemaInvalid}
+								{#if first_issue && !yupErrorMessage.match(/title|description/i)}Question {first_issue.index +
+										1}: {first_issue.issue}{:else}{yupErrorMessage}{/if}{#if errorCount > 1}<span
+										class="opacity-70"
+									>
+										(+{errorCount - 1} more)</span
+									>{/if}
+							{:else}
+								Ready to save, {question_count}
+								{question_count === 1 ? 'question' : 'questions'}
+							{/if}
+						</span>
 					</button>
-				</div>
-				<div class="w-full h-full">
+					<a href="/dashboard" class="bt-btn-ghost exit-btn">Exit</a>
+					<button class="bt-btn-primary" disabled={schemaInvalid || saving} type="submit">
+						<EdIcon name="save" size={18} />
+						<span>{saving ? 'Saving' : $t('words.save')}</span>
+					</button>
+				</header>
+				<div class="min-h-0 flex-1 overflow-y-auto px-5 pb-8 lg:px-8">
 					{#if selected_question === -1}
 						<SettingsCard bind:data bind:edit_id />
 					{:else}
 						<QuizCard bind:data bind:selected_question bind:edit_id />
 					{/if}
 				</div>
-			</div>
-		</div>
-	</form>
-{/await}
+			</main>
+		</form>
+	{/await}
+</World>
+
+<style>
+	.status-bad {
+		background: rgba(249, 130, 250, 0.16);
+		color: #ffd3fb;
+	}
+	.status-good {
+		background: rgba(39, 190, 130, 0.16);
+		color: var(--accent-green-tint);
+	}
+	.exit-btn {
+		min-height: 44px;
+		padding: 0 20px;
+		font-size: 14px;
+		letter-spacing: 2px;
+	}
+</style>

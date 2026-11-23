@@ -67,8 +67,13 @@ export enum QuizQuestionType {
 	SLIDE = 'SLIDE', // eslint-disable-line no-unused-vars
 	TEXT = 'TEXT', // eslint-disable-line no-unused-vars
 	ORDER = 'ORDER', // eslint-disable-line no-unused-vars
-	CHECK = 'CHECK' // eslint-disable-line no-unused-vars
+	CHECK = 'CHECK', // eslint-disable-line no-unused-vars
+	// players type a short word (1-30 chars), the host screen shows a live cloud
+	WORD_CLOUD = 'WORD_CLOUD' // eslint-disable-line no-unused-vars
 }
+
+/** Points a question awards: standard (1000), double (2000) or none (0). */
+export type QuestionPoints = 'standard' | 'double' | 'none';
 
 export interface RangeQuizAnswer {
 	min: number;
@@ -97,6 +102,8 @@ export interface Question {
 	answers: Answers;
 	image?: string;
 	hide_results?: boolean;
+	/** defaults to 'standard' on the server when missing */
+	points?: QuestionPoints;
 }
 
 export type Answers =

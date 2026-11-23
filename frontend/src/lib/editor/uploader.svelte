@@ -4,6 +4,7 @@ SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
 SPDX-License-Identifier: MPL-2.0
 -->
 <script lang="ts">
+	import { portal } from '$lib/editor/portal';
 	import { Dashboard as SvelteDashboard } from '@uppy/svelte';
 	import Uppy from '@uppy/core';
 	import DropTarget from '@uppy/drop-target';
@@ -11,8 +12,7 @@ SPDX-License-Identifier: MPL-2.0
 	import ImageEditor from '@uppy/image-editor';
 	import Dashboard from '@uppy/dashboard';
 	import Compressor from '@uppy/compressor';
-	import { fade } from 'svelte/transition';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
+	import { fade, scale } from 'svelte/transition';
 
 	// CSS imports
 	import '@uppy/core/dist/style.css';
@@ -24,20 +24,24 @@ SPDX-License-Identifier: MPL-2.0
 	import { onMount } from 'svelte';
 	import Library from '$lib/editor/uploader/Library.svelte';
 	import Pixabay from '$lib/editor/uploader/Pixabay.svelte';
+	import EdIcon from '$lib/editor/EdIcon.svelte';
 
 	const { t } = getLocalization();
 	let {
 		modalOpen = $bindable(),
-		data,
+		data = $bindable(),
 		selected_question,
 		video_upload = false,
-		library_enabled = true
+		library_enabled = true,
+		compact = false
 	}: {
 		modalOpen: boolean;
 		data: EditorData;
 		selected_question?: number;
 		video_upload: boolean;
 		library_enabled?: boolean;
+		/** a small pill instead of the drop zone */
+		compact?: boolean;
 	} = $props();
 
 	// eslint-disable-next-line no-undef
@@ -74,18 +78,18 @@ SPDX-License-Identifier: MPL-2.0
 		});
 	const properties = {
 		inline: true,
+		theme: 'dark',
 		restrictions: {
 			maxFileSize: 10_490_000,
 			maxNumberOfFiles: 1,
 			allowedFileTypes: ['image/*']
-			// allowedFileTypes: ['.gif', '.jpg', '.jpeg', '.png', '.svg', '.webp']
 		}
 	};
 	let image_id: string;
 	uppy.on('upload-success', (file, response) => {
 		image_id = response.body.id;
 	});
-	uppy.on('complete', (_) => {
+	uppy.on('complete', () => {
 		if (selected_question === undefined) {
 			data.cover_image = image_id;
 		} else if (selected_question === -1) {
@@ -98,15 +102,30 @@ SPDX-License-Identifier: MPL-2.0
 		selected_type = null;
 	});
 
+	const close = () => {
+		modalOpen = false;
+		selected_type = null;
+	};
+
 	onMount(() => {
-		window.addEventListener('storage', (e) => {
-			if (e.key !== 'video_upload_id') {
+		const on_storage = (e: StorageEvent) => {
+			if (e.key !== 'video_upload_id' || !e.newValue) {
 				return;
 			}
 			localStorage.removeItem('video_upload_id');
 			data.questions[selected_question].image = e.newValue;
 			selected_type = null;
-		});
+			modalOpen = false;
+		};
+		const on_key = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') close();
+		};
+		window.addEventListener('storage', on_storage);
+		window.addEventListener('keydown', on_key);
+		return () => {
+			window.removeEventListener('storage', on_storage);
+			window.removeEventListener('keydown', on_key);
+		};
 	});
 
 	const upload_video = async () => {
@@ -115,132 +134,221 @@ SPDX-License-Identifier: MPL-2.0
 			'_blank',
 			'popup=true,toolbar=false,menubar=false,location=false,'
 		);
-		video_popup.addEventListener('beforeunload', () => {
+		video_popup?.addEventListener('beforeunload', () => {
 			video_popup = undefined;
 		});
 	};
 
 	const handle_on_click = (e: Event) => {
-		if (e.target === e.currentTarget) {
-			modalOpen = false;
-			selected_type = null;
-		}
+		if (e.target === e.currentTarget) close();
 	};
-	onMount(() => {
-		window.addEventListener('keydown', (e: KeyboardEvent) => {
-			if (e.key === 'Escape') {
-				modalOpen = false;
-				selected_type = null;
+
+	const sources = $derived(
+		[
+			{
+				type: AvailableUploadTypes.Image,
+				icon: 'image' as const,
+				label: $t('words.image'),
+				hint: 'Upload from this computer',
+				enabled: true
+			},
+			{
+				type: AvailableUploadTypes.Video,
+				icon: 'video' as const,
+				label: $t('words.video'),
+				hint: video_upload ? 'MP4, compressed before upload' : 'Not available here',
+				enabled: video_upload
+			},
+			{
+				type: AvailableUploadTypes.Library,
+				icon: 'folder' as const,
+				label: $t('words.library'),
+				hint: 'Reuse one of your images',
+				enabled: library_enabled,
+				hidden: !library_enabled
+			},
+			{
+				type: AvailableUploadTypes.Pixabay,
+				icon: 'search' as const,
+				label: 'Pixabay',
+				hint: 'Search free stock photos',
+				enabled: true
 			}
-		});
-	});
+		].filter((s) => !s.hidden)
+	);
 </script>
 
 {#if modalOpen}
 	<div
-		class="w-screen h-screen fixed top-0 left-0 bg-black/50 z-20 flex justify-center"
+	use:portal
+		class="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(5,3,20,0.72)] p-4"
 		onclick={handle_on_click}
-		tabindex="0"
-		role="button"
-		aria-label="Close modal"
-		onkeydown={(e) => (e.key === 'Enter' || e.key === ' ' ? handle_on_click(e) : null)}
+		role="presentation"
 		transition:fade={{ duration: 100 }}
 	>
 		{#if selected_type === null}
-			<div class="m-auto w-1/3 h-auto bg-white dark:bg-gray-700 p-4 rounded-sm">
-				<h1 class="text-3xl text-center mb-4">{$t('uploader.select_upload_type')}</h1>
-				<div class="flex flex-row gap-4">
-					<div class="w-full">
-						<BrownButton
-							onclick={() => {
-								selected_type = AvailableUploadTypes.Image;
-							}}
-							>{$t('words.image')}
-						</BrownButton>
+			<div
+				class="bt-glass panel w-full max-w-xl p-6"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="uploader-title"
+				transition:scale={{ duration: 120, start: 0.97 }}
+			>
+				<div class="mb-5 flex items-start gap-4">
+					<div class="flex-1">
+						<span class="bt-eyebrow text-[11px] text-ink-muted">Media</span>
+						<h2 id="uploader-title" class="bt-headline text-2xl">
+							{$t('uploader.select_upload_type')}
+						</h2>
 					</div>
-					<div class="w-full">
-						<BrownButton
-							disabled={!video_upload}
-							onclick={() => {
-								selected_type = AvailableUploadTypes.Video;
-							}}
-							>{$t('words.video')}
-						</BrownButton>
-					</div>
-					{#if library_enabled}
-						<div class="w-full">
-							<BrownButton
-								onclick={() => {
-									selected_type = AvailableUploadTypes.Library;
-								}}
-								>{$t('words.library')}
-							</BrownButton>
-						</div>
-					{/if}
-					<div class="w-full">
-						<BrownButton
-							onclick={() => {
-								selected_type = AvailableUploadTypes.Pixabay;
-							}}
-							>Pixabay
-						</BrownButton>
-					</div>
+					<button type="button" class="close" aria-label="Close" onclick={close}
+						><EdIcon name="x" size={20} /></button
+					>
+				</div>
+				<div class="grid grid-cols-2 gap-3">
+					{#each sources as s}
+						<button
+							type="button"
+							class="source"
+							disabled={!s.enabled}
+							onclick={() => (selected_type = s.type)}
+						>
+							<span class="source-icon"><EdIcon name={s.icon} size={22} /></span>
+							<span class="block font-black uppercase tracking-[1px]">{s.label}</span>
+							<span class="block text-xs text-ink-muted">{s.hint}</span>
+						</button>
+					{/each}
 				</div>
 			</div>
 		{:else if selected_type === AvailableUploadTypes.Image}
-			<div class="m-auto w-1/3 h-5/6" transition:fade={{ duration: 100 }}>
-				<div>
-					<SvelteDashboard {uppy} width="100%" {properties} />
-				</div>
+			<div class="uppy-wrap w-full max-w-2xl" transition:fade={{ duration: 100 }}>
+				<SvelteDashboard {uppy} width="100%" {properties} />
 			</div>
 		{:else if selected_type === AvailableUploadTypes.Video}
 			<div
-				class="m-auto w-1/3 h-auto bg-white dark:bg-gray-700 p-4 rounded-sm"
+				class="bt-glass panel w-full max-w-xl p-6"
+				role="dialog"
+				aria-modal="true"
 				transition:fade={{ duration: 100 }}
 			>
-				<h1 class="text-3xl text-center mb-4">{$t('uploader.upload_a_video')}</h1>
+				<span class="bt-eyebrow text-[11px] text-ink-muted">Media</span>
+				<h2 class="bt-headline mb-4 text-2xl">{$t('uploader.upload_a_video')}</h2>
 				{#if video_popup}
-					<p class="text-center">
+					<p class="text-ink-muted">
 						{$t('uploader.upload_video_popup_notice')}
 					</p>
 				{:else}
-					<BrownButton onclick={upload_video} type="button"
-						>{$t('uploader.upload_video')}</BrownButton
+					<button type="button" class="bt-btn-primary bt-btn-block" onclick={upload_video}
+						>{$t('uploader.upload_video')}</button
 					>
 				{/if}
 			</div>
 		{:else if selected_type === AvailableUploadTypes.Library}
-			<div>
-				<Library bind:data {selected_question} bind:modalOpen />
-			</div>
+			<Library bind:data {selected_question} bind:modalOpen />
 		{:else if selected_type === AvailableUploadTypes.Pixabay}
-			<div>
-				<Pixabay bind:data {selected_question} bind:modalOpen />
-			</div>
+			<Pixabay bind:data {selected_question} bind:modalOpen />
 		{/if}
 	</div>
 {/if}
-<div class="flex justify-center w-full pt-10" transition:fade>
-	<button
-		class="rounded-lg p-4 flex justify-center bg-transparent border-gray-500 border-2 w-1/2 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-		type="button"
-		onclick={() => {
-			modalOpen = true;
-		}}
-		><span class="italic">{$t('uploader.add_image')}</span>
-		<svg
-			class="w-6 h-6 inline-block"
-			fill="none"
-			stroke="currentColor"
-			viewBox="0 0 24 24"
-			xmlns="http://www.w3.org/2000/svg"
+
+<button
+	class="add-media"
+	class:add-media-compact={compact}
+	type="button"
+	onclick={() => {
+		modalOpen = true;
+	}}
+>
+	<EdIcon name="image" size={compact ? 18 : 26} />
+	<span>{$t('uploader.add_image')}</span>
+	{#if !compact}
+		<span class="text-xs font-normal tracking-normal normal-case text-ink-muted"
+			>Image, video, your library or Pixabay</span
 		>
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2"
-				d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-			/>
-		</svg>
-	</button>
-</div>
+	{/if}
+</button>
+
+<style>
+	.panel {
+		background: rgba(14, 10, 46, 0.94);
+	}
+	.close {
+		display: grid;
+		place-items: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 999px;
+		background: var(--fill-glass);
+	}
+	.close:hover {
+		background: var(--fill-glass-strong);
+	}
+	.source {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 4px;
+		padding: 16px;
+		border-radius: 18px;
+		background: var(--fill-glass);
+		text-align: left;
+		transition: background-color 120ms ease;
+	}
+	.source:hover:not(:disabled) {
+		background: var(--fill-glass-strong);
+	}
+	.source:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+	.source-icon {
+		display: grid;
+		place-items: center;
+		width: 40px;
+		height: 40px;
+		margin-bottom: 6px;
+		border-radius: 12px;
+		background: var(--fill-deep);
+	}
+	.add-media {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		width: 100%;
+		min-height: 128px;
+		padding: 16px;
+		border-radius: 18px;
+		background: var(--fill-deep);
+		color: var(--ink);
+		font-weight: 700;
+		font-size: 13px;
+		letter-spacing: 2px;
+		text-transform: uppercase;
+		transition: background-color 120ms ease;
+	}
+	.add-media:hover {
+		background: var(--fill-glass-mid);
+	}
+	.add-media-compact {
+		flex-direction: row;
+		min-height: 40px;
+		width: auto;
+		padding: 0 16px;
+		border-radius: 999px;
+		background: var(--fill-glass);
+	}
+	.add-media:focus-visible,
+	.source:focus-visible,
+	.close:focus-visible {
+		outline: 3px solid var(--accent-sky-tint);
+		outline-offset: 2px;
+	}
+	.uppy-wrap :global(.uppy-Dashboard-inner) {
+		border: 0;
+		border-radius: 25px;
+		overflow: hidden;
+		background-color: #0e0a2e;
+	}
+</style>
