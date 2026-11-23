@@ -5,7 +5,7 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import { navbarVisible} from '$lib/stores.svelte.ts';
+	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { page } from '$app/state';
 	import { getLocalization } from '$lib/i18n';
 
@@ -17,26 +17,17 @@ SPDX-License-Identifier: MPL-2.0
 <svelte:head>
 	<title>{$t('words.error')} - {status}</title>
 </svelte:head>
-<h1 class="text-6xl text-center">{status}</h1>
-
-{#if status === 404}
-	<p class="text-center">
-		{$t('error_page.404_text')}
+<div class="bt-glass max-w-xl mx-4 sm:mx-auto mt-16 px-8 py-10 text-center">
+	<span class="bt-eyebrow text-ink-muted">Live Quiz</span>
+	<h1 class="mt-3 text-7xl font-black bt-num">{status}</h1>
+	<p class="mt-4 text-ink-muted">
+		{#if status === 404}
+			{$t('error_page.404_text')}
+		{:else if status === 410}
+			{$t('quiztivity.share_expired')}
+		{:else}
+			{$t('error_page.unknown_error_text')}
+		{/if}
 	</p>
-{:else if status === 410}
-	<p class="text-center">
-		{$t('quiztivity.share_expired')}
-	</p>
-{:else}
-	<p class="text-center">
-		{$t('error_page.unknown_error_text')}
-	</p>
-{/if}
-
-<div class="flex justify-center mt-8">
-	<img
-		class="rounded-lg"
-		src="https://http.cat/{status}"
-		alt="Cat representing the {status}-http error code"
-	/>
+	<a href="/" class="bt-btn-ghost mt-8">Home</a>
 </div>

@@ -5,18 +5,11 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
-	import type { EditorData } from '../quiz_types';
+	import type { EditorData, VotingAnswer } from '../quiz_types';
 	import { fade } from 'svelte/transition';
-	import { reach } from 'yup';
-	import { getLocalization } from '$lib/i18n';
-	import { VotingQuestionSchema } from '$lib/yupSchemas';
-	import { get_foreground_color } from '$lib/helpers';
+	import AnswerTile from '$lib/editor/AnswerTile.svelte';
+	import EdIcon from '$lib/editor/EdIcon.svelte';
 
-	const { t } = getLocalization();
-
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
 	interface Props {
 		selected_question: number;
 		data: EditorData;
@@ -28,108 +21,75 @@ SPDX-License-Identifier: MPL-2.0
 		data.questions[selected_question].answers = [];
 	}
 	try {
-		if (typeof data.questions[selected_question].answers[0].right === 'boolean') {
+		// answers of another type (with a right flag) do not belong in a poll
+		if (typeof (data.questions[selected_question].answers[0] as { right?: unknown }).right === 'boolean') {
 			data.questions[selected_question].answers = [];
 		}
 		// eslint-disable-next-line no-empty
 	} catch {}
 
-	const set_colors_if_unset = () => {
-		for (let i = 0; i < data.questions[selected_question].answers.length; i++) {
-			if (!data.questions[selected_question].answers[i].color) {
-				data.questions[selected_question].answers[i].color = default_colors[i];
-			}
-		}
+	const answers = $derived(data.questions[selected_question].answers as VotingAnswer[]);
+
+	const add_answer = () => {
+		data.questions[selected_question].answers = [...answers, { answer: '', image: undefined }];
 	};
-	run(() => {
-		set_colors_if_unset();
-		data;
-		selected_question;
-	});
-	/*console.log(data.questions[selected_question].answers, 'moIn!', data.questions[selected_question].answers.length);
-    onMount(() => {
-        for (let i = 0; i < data.questions[selected_question].answers; i++) {
-            console.log(data.questions[selected_question].answers[i], 'iterate');
-            data.questions[selected_question].answers[i].right = undefined;
-        }
-    });*/
+	const remove_answer = (index: number) => {
+		const arr = [...answers];
+		arr.splice(index, 1);
+		data.questions[selected_question].answers = arr;
+	};
 </script>
 
-<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-4 w-full px-10">
-	{#if Array.isArray(data.questions[selected_question].answers)}
-		{#each data.questions[selected_question].answers as answer, index}
-			<div
-				out:fade={{ duration: 150 }}
-				class="p-4 rounded-lg flex justify-center w-full transition relative"
-				class:bg-yellow-500={!reach(VotingQuestionSchema, 'answer').isValidSync(
-					answer.answer
-				)}
-				class:dark:bg-gray-500={answer.answer}
-				class:bg-gray-300={answer.answer}
-			>
-				<button
-					class="rounded-full absolute -top-2 -right-2 opacity-70 hover:opacity-100 transition"
-					type="button"
-					onclick={() => {
-						data.questions[selected_question].answers.splice(index, 1);
-						data.questions[selected_question].answers =
-							data.questions[selected_question].answers;
-					}}
-				>
-					<svg
-						class="w-6 h-6 bg-red-500 rounded-full"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-				</button>
-				<input
-					bind:value={answer.answer}
-					type="text"
-					class="border-b-2 border-dotted w-5/6 text-center rounded-lg"
-					style="background-color: {answer.color ??
-						'transparent'}; color: {get_foreground_color(answer.color)}"
-					placeholder={$t('editor.empty')}
-				/>
-				<input
-					class="rounded-lg p-1 border-black border"
-					type="color"
-					bind:value={answer.color}
-					oncontextmenu={(e) => {
-						e.preventDefault();
-						answer.color = default_colors[index];
-					}}
-				/>
-			</div>
-		{/each}
-	{/if}
-	{#if data.questions[selected_question].answers.length < 4}
-		<button
-			class="p-4 rounded-lg bg-transparent border-gray-500 border-2 hover:bg-gray-300 transition dark:hover:bg-gray-600"
-			type="button"
-			in:fade={{ duration: 150 }}
-			onclick={() => {
-				data.questions[selected_question].answers = [
-					...data.questions[selected_question].answers,
-					{
-						...{
-							answer: '',
-							image: undefined,
-							color: default_colors[data.questions[selected_question].answers.length]
-						}
-					}
-				];
-			}}
-		>
-			<span class="italic text-center">{$t('editor_page.add_an_answer')}</span>
+<div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+	<span class="bt-eyebrow text-[11px] text-ink-muted">Options</span>
+	<span class="text-xs text-ink-muted">
+		A poll: no correct answer, no points. The screen shows how the room voted.
+	</span>
+</div>
+
+<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+	{#each answers as _answer, index (index)}
+		<div out:fade={{ duration: 120 }}>
+			<AnswerTile
+				bind:answer={data.questions[selected_question].answers[index]}
+				{index}
+				correct_toggle={false}
+				placeholder="Option {index + 1}"
+				removable={answers.length > 1}
+				onremove={() => remove_answer(index)}
+			/>
+		</div>
+	{/each}
+	{#if answers.length < 4}
+		<button class="add-tile" type="button" in:fade={{ duration: 120 }} onclick={add_answer}>
+			<EdIcon name="plus" size={20} stroke={2.5} />
+			<span>Add an option</span>
 		</button>
 	{/if}
 </div>
+
+<style>
+	.add-tile {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		min-height: 92px;
+		border-radius: 25px;
+		background: var(--fill-glass);
+		color: var(--ink-muted);
+		font-weight: 700;
+		letter-spacing: 2px;
+		text-transform: uppercase;
+		font-size: 13px;
+		transition: background-color 120ms ease;
+	}
+	.add-tile:hover {
+		background: var(--fill-glass-mid);
+		color: var(--ink);
+	}
+	.add-tile:focus-visible {
+		outline: 3px solid var(--accent-sky-tint);
+		outline-offset: 2px;
+	}
+</style>

@@ -18,7 +18,9 @@ SPDX-License-Identifier: MPL-2.0
 	const { t } = getLocalization();
 </script>
 
-<div class="mt-auto h-[7vh] bg-black/50 shadow-2xl flex justify-between">
+<div
+	class="bt-glass bt-glass-deep mt-auto mx-2 mb-2 min-h-[7vh] flex justify-between !rounded-card"
+>
 	<div class="my-auto justify-start ml-4">
 		<BrownButton
 			disabled={current_slide_index < 1}
@@ -27,12 +29,12 @@ SPDX-License-Identifier: MPL-2.0
 			}}>{$t('words.back')}</BrownButton
 		>
 	</div>
-	<div class="my-auto">
+	<div class="my-auto bt-num font-black">
 		{current_slide_index + 1}/{question_count}
 	</div>
 	<div class="my-auto justify-end mr-4">
 		<BrownButton
-			disabled={current_slide_index === 1}
+			disabled={current_slide_index >= question_count - 1}
 			onclick={() => {
 				current_slide_index += 1;
 			}}>{$t('words.next')}</BrownButton

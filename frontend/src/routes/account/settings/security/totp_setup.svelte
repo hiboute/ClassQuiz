@@ -22,17 +22,17 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<div class="w-screen h-screen fixed top-0 left-0 p-48 z-30 bg-black/50">
+<div class="w-screen h-screen fixed top-0 left-0 p-4 sm:p-16 lg:p-24 z-50 bg-[#05040f]/70 backdrop-blur-sm">
 	<div class="w-full h-full">
 		<button
-			class="bg-gray-200 dark:bg-gray-900 px-2 py-1 rounded-t-lg hover:bg-gray-300 transition"
+			class="bg-[#1a1440] px-4 py-2 rounded-t-[18px] hover:bg-[#2a2160] transition"
 			onclick={() => {
 				totp_data = undefined;
 			}}
 			>{$t('words.close')}
 		</button>
-		<div class="bg-white dark:bg-gray-700 rounded-b-lg rounded-tr-lg w-full h-full">
-			<div class="grid grid-cols-3 w-full h-full">
+		<div class="bg-[#1a1440] rounded-b-[25px] rounded-tr-[25px] p-6 overflow-auto w-full h-full">
+			<div class="grid lg:grid-cols-3 gap-6 w-full h-full">
 				<div class="flex flex-col justify-center w-full h-5/6">
 					<span class="m-auto"></span>
 					<div class="h-5/6 flex">

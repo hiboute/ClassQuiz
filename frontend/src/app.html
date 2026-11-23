@@ -5,24 +5,34 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="description" content="" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<script>
-			window.plausible =
-				window.plausible ||
-				function () {
-					(window.plausible.q = window.plausible.q || []).push(arguments);
-				};
-		</script>
-
-		<link
-			rel="apple-touch-icon"
-			sizes="180x180"
-			href="%sveltekit.assets%/apple-touch-icon.png"
+		<meta
+			name="description"
+			content="India Tech Hub Live Quiz: join a game with your PIN, answer against the clock, climb the leaderboard."
 		/>
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="color-scheme" content="dark" />
+		<script>
+			// Analytics are disabled; keep a no-op so legacy plausible() calls stay harmless.
+			window.plausible = function () {};
+		</script>
+		<link
+			rel="preload"
+			href="%sveltekit.assets%/fonts/LOREALEssentielle-Black.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin
+		/>
+		<link
+			rel="preload"
+			href="%sveltekit.assets%/fonts/LOREALEssentielle-Regular.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin
+		/>
+		<link rel="icon" href="%sveltekit.assets%/favicon.ico" sizes="any" />
 		<link
 			rel="icon"
 			type="image/png"
@@ -35,11 +45,16 @@ SPDX-License-Identifier: MPL-2.0
 			sizes="16x16"
 			href="%sveltekit.assets%/favicon-16x16.png"
 		/>
+		<link
+			rel="apple-touch-icon"
+			sizes="180x180"
+			href="%sveltekit.assets%/apple-touch-icon.png"
+		/>
 		<link rel="manifest" href="%sveltekit.assets%/site.webmanifest" />
-		<meta name="apple-mobile-web-app-title" content="ClassQuiz" />
-		<meta name="application-name" content="ClassQuiz" />
-		<meta name="msapplication-TileColor" content="#00a300" />
-		<meta name="theme-color" content="#ffffff" />
+		<meta name="apple-mobile-web-app-title" content="Live Quiz" />
+		<meta name="application-name" content="India Tech Hub Live Quiz" />
+		<meta name="msapplication-TileColor" content="#090924" />
+		<meta name="theme-color" content="#090924" />
 		%sveltekit.head%
 	</head>
 	<body>

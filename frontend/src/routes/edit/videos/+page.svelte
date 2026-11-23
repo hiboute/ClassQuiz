@@ -7,7 +7,6 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { FFmpeg } from '@ffmpeg/ffmpeg';
 	import { fetchFile } from '@ffmpeg/util';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { getLocalization } from '$lib/i18n';
 	const { t } = getLocalization();
@@ -145,71 +144,97 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<div class="w-screen h-screen m-auto flex flex-col dark:bg-gray-700 p-2 bg-white">
-	<input type="file" bind:this={file_input} class="m-auto" accept="video/mp4" />
-	<div class="mt-auto flex justify-center">
-		{#if status === Status.Compressing || status === Status.CompressDone}
-			<table>
-				<thead>
-					<tr>
-						<th>{$t('words.speed')}</th>
-						<th>{$t('words.progress')}</th>
-						<th>{$t('video_uploader.time_elapsed')}</th>
-						<th>{$t('video_uploader.time_remaining')}</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>{stats.speed}</td>
-						<td>{Math.round(stats.progress * 100)}%</td>
-						<td>{upload_stats.time_elapsed.toFixed(2)}s</td>
-						<td
-							>{(
-								stats.time_elapsed / stats.progress -
-								upload_stats.time_elapsed
-							).toFixed(2)}s</td
-						>
-					</tr></tbody
-				>
-			</table>
-		{:else if status === Status.Uploading}
-			<table>
-				<thead>
-					<tr>
-						<th>{$t('words.progress')}</th>
-						<th>{$t('video_uploader.time_elapsed')}</th>
-						<th>{$t('video_uploader.time_remaining')}</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>{Math.round(upload_stats.progress * 100)}%</td>
-						<td>{stats.time_elapsed.toFixed(2)}s</td>
-						<td
-							>{(stats.time_elapsed / stats.progress - stats.time_elapsed).toFixed(
-								2
-							)}s</td
-						>
-					</tr>
-				</tbody>
-			</table>
-		{/if}
+<div class="mx-auto flex min-h-dvh max-w-xl flex-col justify-center gap-5 p-6">
+	<div>
+		<span class="bt-eyebrow text-[11px] text-ink-muted">Media</span>
+		<h1 class="bt-headline mt-1 text-3xl">{$t('uploader.upload_a_video')}</h1>
+		<p class="mt-2 text-sm text-ink-muted">
+			Pick an MP4, compress it here, then upload it. This window closes when it is done.
+		</p>
 	</div>
-	<div class="flex relative my-2">
-		<div class="w-full">
-			<BrownButton disabled={status !== Status.CompressDone} onclick={upload_video}>
-				{$t('words.upload')}
-				{file_size_in_mi ? `(${file_size_in_mi.toFixed(2)} Mi)` : ''}</BrownButton
-			>
+	<label class="bt-glass bt-glass-faint flex cursor-pointer flex-col gap-2 p-5">
+		<span class="bt-eyebrow text-[10px] text-ink-muted">1. Video file</span>
+		<input type="file" bind:this={file_input} class="file" accept="video/mp4" />
+	</label>
+	<button
+		type="button"
+		class="bt-btn-ghost bt-btn-block"
+		onclick={compress_video}
+		disabled={status !== Status.Idle}>2. {$t('words.submit')}</button
+	>
+	{#if status === Status.Compressing || status === Status.CompressDone || status === Status.Uploading}
+		<div class="bt-glass bt-glass-faint p-5">
+			<div class="bar" aria-hidden="true">
+				<span
+					style="width:{Math.round(
+						(status === Status.Uploading ? upload_stats.progress : stats.progress) * 100
+					)}%"
+				></span>
+			</div>
+			<dl class="mt-4 grid grid-cols-3 gap-3 text-sm">
+				<div>
+					<dt class="text-ink-muted">{$t('words.progress')}</dt>
+					<dd class="bt-num text-2xl">
+						{Math.round(
+							(status === Status.Uploading ? upload_stats.progress : stats.progress) * 100
+						)}%
+					</dd>
+				</div>
+				{#if status !== Status.Uploading}
+					<div>
+						<dt class="text-ink-muted">{$t('words.speed')}</dt>
+						<dd class="bt-num text-2xl">{stats.speed}x</dd>
+					</div>
+				{/if}
+				<div>
+					<dt class="text-ink-muted">{$t('video_uploader.time_elapsed')}</dt>
+					<dd class="bt-num text-2xl">
+						{(status === Status.Uploading
+							? upload_stats.time_elapsed
+							: stats.time_elapsed
+						).toFixed(1)}s
+					</dd>
+				</div>
+			</dl>
 		</div>
-		<span
-			class="h-full transition-all absolute rounded-sm bg-black/50"
-			style="width: {100 - stats.progress * 100}%"
-		></span>
-	</div>
-	<div class="flex justify-center">
-		<BrownButton onclick={compress_video} disabled={status !== Status.Idle}
-			>{$t('words.submit')}</BrownButton
-		>
-	</div>
+	{/if}
+	<button
+		type="button"
+		class="bt-btn-primary bt-btn-block"
+		disabled={status !== Status.CompressDone}
+		onclick={upload_video}
+	>
+		3. {$t('words.upload')}
+		{file_size_in_mi ? `(${file_size_in_mi.toFixed(2)} MB)` : ''}
+	</button>
 </div>
+
+<style>
+	.file {
+		color: var(--ink-muted);
+		font-size: 14px;
+	}
+	.file::file-selector-button {
+		margin-right: 12px;
+		padding: 8px 16px;
+		border: 0;
+		border-radius: 999px;
+		background: var(--fill-glass-strong);
+		color: var(--ink);
+		font-family: var(--bt-font);
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.bar {
+		height: 8px;
+		border-radius: 999px;
+		background: var(--fill-glass-mid);
+		overflow: hidden;
+	}
+	.bar span {
+		display: block;
+		height: 100%;
+		background: linear-gradient(90deg, var(--accent-sky), var(--accent-green));
+		transition: width 200ms ease;
+	}
+</style>

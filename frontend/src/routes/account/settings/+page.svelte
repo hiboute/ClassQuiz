@@ -8,9 +8,8 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	import { DateTime } from 'luxon';
 	import { UAParser } from 'ua-parser-js';
-	import Spinner from '$lib/Spinner.svelte';
 	import { onMount } from 'svelte';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
+	import PageHeader from '$lib/components/organiser/PageHeader.svelte';
 
 	const { t } = getLocalization();
 
@@ -34,8 +33,8 @@ SPDX-License-Identifier: MPL-2.0
 		newPasswordConfirm: ''
 	});
 
-	let locationData;
-	let this_session = $state();
+	let password_message = $state('');
+	let this_session: any = $state();
 
 	let passwordChangeDataValid = $derived(
 		changePasswordData.newPassword === changePasswordData.newPasswordConfirm &&
@@ -60,10 +59,10 @@ SPDX-License-Identifier: MPL-2.0
 			})
 		});
 		if (res.status === 200) {
-			alert('Password changed');
-			window.location.assign('/account/login');
+			password_message = 'Password changed. Sign in again with the new one.';
+			setTimeout(() => window.location.assign('/account/login'), 1500);
 		} else {
-			alert('Password change failed');
+			password_message = 'The password could not be changed. Check the current password.';
 		}
 	};
 
@@ -85,14 +84,13 @@ SPDX-License-Identifier: MPL-2.0
 		api_keys = get_api_keys();
 	});
 
-	const get_api_keys = async (): Promise<Array<string>> => {
+	const get_api_keys = async (): Promise<any[]> => {
 		const res = await fetch('/api/v1/users/api_keys');
 		const api_keys_temp = await res.json();
-		console.log(api_keys_temp);
 		return api_keys_temp;
 	};
 
-	let api_keys = $state();
+	let api_keys: Promise<any[]> | undefined = $state();
 
 	const add_api_key = async () => {
 		await fetch('/api/v1/users/api_keys', { method: 'POST' });
@@ -141,176 +139,171 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>ClassQuiz - Settings</title>
+	<title>Settings - India Tech Hub Live Quiz</title>
 </svelte:head>
 
-{#await getUser()}
-	<Spinner />
-{:then user}
-	<div class="w-full grid grid-cols-6">
-		<div>
-			<img
-				class="rounded-md md:w-80"
-				src="/api/v1/users/avatar"
-				alt="Profile image of {user.username}"
-			/>
-			<div class="m-2 flex justify-center">
-				<BrownButton href="/account/settings/avatar"
-					>{$t('settings_page.change_avatar')}</BrownButton
+<main class="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-14 pb-16">
+	{#await getUser()}
+		<div class="h-40 flex items-center justify-center text-ink-muted">Loading</div>
+	{:then user}
+		<PageHeader eyebrow="Account" kicker={user.email} headline={user.username}>
+			{#snippet actions()}
+				<a href="/dashboard" class="bt-btn-ghost">Dashboard</a>
+			{/snippet}
+		</PageHeader>
+
+		<div class="mt-10 grid gap-4 lg:grid-cols-[280px_1fr]">
+			<section class="bt-glass bt-glass-faint p-6 flex flex-col items-center gap-5" aria-label="Avatar">
+				<img
+					class="h-40 w-40 rounded-full bg-white/10 object-cover"
+					src="/api/v1/users/avatar"
+					alt=""
+				/>
+				<a href="/account/settings/avatar" class="bt-btn-ghost bt-btn-block !text-sm"
+					>{$t('settings_page.change_avatar')}</a
 				>
-			</div>
-		</div>
-		<div class="grid grid-rows-2 col-start-2 col-end-7">
-			<div class="grid grid-cols-2">
-				<div>
-					<h1 class="text-4xl font-bold my-2">{user.username}</h1>
-					<p class="text-lg mb-6 md:max-w-lg">
-						{$t('words.email')}: {user.email}
-					</p>
+				<div class="w-full flex flex-col gap-1 text-sm">
+					<a
+						href="/account/settings/security"
+						class="rounded-[12px] px-3 py-2 hover:bg-white/10 flex justify-between"
+						>{$t('settings_page.security_settings')}<span aria-hidden="true">&rsaquo;</span></a
+					>
+					<a
+						href="/user/{user.id}"
+						class="rounded-[12px] px-3 py-2 hover:bg-white/10 flex justify-between"
+						>Public profile page<span aria-hidden="true">&rsaquo;</span></a
+					>
 				</div>
-				<div class="p-4 flex justify-center">
-					<div class="m-auto">
-						<BrownButton href="/account/settings/security"
-							>{$t('settings_page.security_settings')}
-						</BrownButton>
-						<BrownButton href="/account/controllers">ClassQuizController</BrownButton>
-						<BrownButton href="/user/{user.id}">Public profile page</BrownButton>
-					</div>
-				</div>
-			</div>
-			<div>
-				<form class="flex flex-col md:flex-row" onsubmit={changePassword}>
-					<label
-						>{$t('settings_page.old_password')}:<input
+			</section>
+
+			<section class="bt-glass bt-glass-faint p-6 sm:p-8">
+				<span class="bt-eyebrow text-ink-muted mb-2">Password</span>
+				<h2 class="font-black text-2xl uppercase">{$t('settings_page.change_password_submit')}</h2>
+				<form class="mt-6 grid gap-4 sm:grid-cols-3" onsubmit={changePassword}>
+					<label class="flex flex-col gap-2">
+						<span class="bt-eyebrow !text-[11px] !tracking-[3px] text-ink-muted"
+							>{$t('settings_page.old_password')}</span
+						>
+						<input
 							type="password"
-							class="m-2 text-black rounded-sm p-1 dark:bg-gray-700 dark:text-white"
+							class="bt-input !text-base"
+							autocomplete="current-password"
 							bind:value={changePasswordData.oldPassword}
-						/></label
-					>
-					<label
-						>{$t('settings_page.new_password')}:<input
+						/>
+					</label>
+					<label class="flex flex-col gap-2">
+						<span class="bt-eyebrow !text-[11px] !tracking-[3px] text-ink-muted"
+							>{$t('settings_page.new_password')}</span
+						>
+						<input
 							type="password"
-							class="m-2 text-black rounded-sm p-1 dark:bg-gray-700 dark:text-white"
+							class="bt-input !text-base"
+							autocomplete="new-password"
 							bind:value={changePasswordData.newPassword}
-						/></label
-					>
-					<label
-						>{$t('settings_page.repeat_password')}:<input
+						/>
+					</label>
+					<label class="flex flex-col gap-2">
+						<span class="bt-eyebrow !text-[11px] !tracking-[3px] text-ink-muted"
+							>{$t('settings_page.repeat_password')}</span
+						>
+						<input
 							type="password"
-							class="m-2 text-black rounded-sm p-1 dark:bg-gray-700 dark:text-white"
+							class="bt-input !text-base"
+							autocomplete="new-password"
 							bind:value={changePasswordData.newPasswordConfirm}
-						/></label
-					>
-					<div class="my-auto">
-						<BrownButton disabled={!passwordChangeDataValid} type="submit">
+						/>
+					</label>
+					<div class="sm:col-span-3 flex flex-wrap items-center gap-4">
+						<button class="bt-btn-primary" disabled={!passwordChangeDataValid} type="submit">
 							{$t('settings_page.change_password_submit')}
-						</BrownButton>
+						</button>
+						<p class="text-sm text-ink-muted" role="status">
+							{password_message || 'At least 8 characters, different from the current one.'}
+						</p>
 					</div>
 				</form>
-				<div>
-					<div class="w-fit">
-						<BrownButton onclick={add_api_key}
-							>{$t('settings_page.add_api_key')}</BrownButton
-						>
-					</div>
-					{#await api_keys}
-						<Spinner />
-					{:then keys}
-						{#each keys as key}
-							<div>
-								{key.key}
-								<div class="inline-block">
-									<BrownButton
-										onclick={() => {
-											delete_api_key(key.key);
-										}}
-										>{$t('words.delete')}
-									</BrownButton>
-								</div>
-							</div>
-						{/each}
-					{/await}
-				</div>
-			</div>
+			</section>
 		</div>
-	</div>
-{/await}
-{#await getSessions()}
-	<Spinner />
-{:then sessions}
-	<table class="min-w-full">
-		<thead class="bg-gray-50 dark:bg-gray-700">
-			<tr>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
+
+		<section class="bt-glass bt-glass-faint mt-4 p-6 sm:p-8">
+			<div class="flex flex-wrap items-end justify-between gap-4">
+				<div>
+					<span class="bt-eyebrow text-ink-muted mb-2">Integrations</span>
+					<h2 class="font-black text-2xl uppercase">API keys</h2>
+				</div>
+				<button type="button" class="bt-btn-ghost !text-sm" onclick={add_api_key}
+					>{$t('settings_page.add_api_key')}</button
 				>
-					{$t('overview_page.created_at')}
-				</th>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
-				>
-					{$t('settings_page.last_seen')}
-				</th>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
-				>
-					{$t('words.browser')}
-				</th>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
-				>
-					{$t('settings_page.delete_this_session')}
-				</th>
-				<th
-					scope="col"
-					class="py-3 px-6 text-xs font-medium tracking-wider text-left text-gray-700 uppercase dark:text-gray-400"
-				>
-					{$t('settings_page.this_session?')}
-				</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each sessions as session}
-				<tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						{formatDate(session.created_at)}
-					</td>
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						{formatDate(session.last_seen)}
-					</td>
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						{getFormattedUserAgent(session.user_agent)}
-					</td>
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						<button
-							onclick={() => {
-								deleteSession(session.id);
-							}}>{$t('words.delete')}</button
-						>
-					</td>
-					<td
-						class="py-4 px-6 text-sm text-gray-500 whitespace-nowrap dark:text-gray-400"
-					>
-						{#if session.id === this_session?.id}
-							✅
-						{:else}
-							❌
-						{/if}
-					</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
-{/await}
+			</div>
+			{#await api_keys}
+				<p class="mt-4 text-ink-muted">Loading</p>
+			{:then keys}
+				{#if keys?.length}
+					<ul class="mt-5 flex flex-col gap-2">
+						{#each keys as key}
+							<li class="flex items-center gap-3 rounded-[12px] bg-white/[0.06] ps-4 pe-2 py-2">
+								<code class="flex-1 min-w-0 truncate text-sm">{key.key}</code>
+								<button
+									type="button"
+									class="rounded-full px-4 py-2 text-sm hover:bg-white/10 text-[#ff9db0]"
+									onclick={() => delete_api_key(key.key)}>{$t('words.delete')}</button
+								>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="mt-4 text-sm text-ink-muted">No API key yet.</p>
+				{/if}
+			{/await}
+		</section>
+	{/await}
+
+	{#await getSessions() then sessions}
+		<section class="bt-glass bt-glass-faint mt-4 p-6 sm:p-8">
+			<span class="bt-eyebrow text-ink-muted mb-2">Security</span>
+			<h2 class="font-black text-2xl uppercase">Signed-in sessions</h2>
+			<div class="mt-5 overflow-x-auto -mx-2">
+				<table class="min-w-full text-sm">
+					<thead>
+						<tr class="text-start text-ink-muted">
+							<th scope="col" class="px-2 py-2 font-normal text-start uppercase text-[11px] tracking-[2px]"
+								>{$t('words.browser')}</th
+							>
+							<th scope="col" class="px-2 py-2 font-normal text-start uppercase text-[11px] tracking-[2px]"
+								>{$t('overview_page.created_at')}</th
+							>
+							<th scope="col" class="px-2 py-2 font-normal text-start uppercase text-[11px] tracking-[2px]"
+								>{$t('settings_page.last_seen')}</th
+							>
+							<th scope="col" class="px-2 py-2"><span class="sr-only">Actions</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each sessions as session}
+							<tr class="border-t border-white/10">
+								<td class="px-2 py-3 whitespace-nowrap">
+									{getFormattedUserAgent(session.user_agent)}
+									{#if session.id === this_session?.id}
+										<span
+											class="ms-2 rounded-full bg-[var(--accent-green)]/25 px-2 py-0.5 text-[11px] uppercase tracking-[2px]"
+											>This device</span
+										>
+									{/if}
+								</td>
+								<td class="px-2 py-3 whitespace-nowrap text-ink-muted">{formatDate(session.created_at)}</td>
+								<td class="px-2 py-3 whitespace-nowrap text-ink-muted">{formatDate(session.last_seen)}</td>
+								<td class="px-2 py-3 text-end">
+									<button
+										type="button"
+										class="rounded-full px-4 py-1.5 hover:bg-white/10 text-[#ff9db0]"
+										onclick={() => deleteSession(session.id)}>Sign out</button
+									>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	{/await}
+</main>

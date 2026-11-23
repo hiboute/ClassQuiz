@@ -7,7 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 
 # Remote Control
 
-Control the admin-screen from a different device!
+Control the host screen from a different device.
 
 ## Use Case
 

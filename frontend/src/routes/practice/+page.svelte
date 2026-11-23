@@ -36,7 +36,7 @@ SPDX-License-Identifier: MPL-2.0
 {#await get_quiz()}
 	<Spinner />
 {:then q}
-	<div class="h-full overflow-hidden">
+	<div class="relative min-h-[calc(100dvh-4rem)] pt-6 overflow-hidden">
 		{#if selected_question === -1}
 			<TitleScreen bind:data={quiz} />
 		{:else}
@@ -45,9 +45,9 @@ SPDX-License-Identifier: MPL-2.0
 			{/key}
 		{/if}
 
-		<div class="grid grid-cols-2 h-fit px-20 mt-6 absolute bottom-0 w-full">
+		<div class="grid grid-cols-2 h-fit px-6 lg:px-20 pb-4 absolute bottom-0 w-full">
 			<button
-				class="flex justify-start transition-all disabled:opacity-60"
+				class="flex justify-start transition-all disabled:opacity-30" aria-label="Previous question"
 				disabled={selected_question <= -1}
 				onclick={() => {
 					selected_question -= 1;
@@ -69,7 +69,7 @@ SPDX-License-Identifier: MPL-2.0
 				</svg>
 			</button>
 			<button
-				class="flex justify-end transition-all disabled:opacity-60"
+				class="flex justify-end transition-all disabled:opacity-30" aria-label="Next question"
 				disabled={selected_question >= quiz.questions.length - 1}
 				onclick={() => {
 					reload_q();
@@ -95,8 +95,8 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 {:catch e}
 	{#if e === 404 || e === 400}
-		<h1 class="text-center text-5xl">Quiz not found!</h1>
+		<h1 class="bt-headline text-center text-4xl mt-20 px-4">Quiz not found</h1>
 	{:else}
-		<h1 class="text-center text-5xl">unknown error!</h1>
+		<h1 class="bt-headline text-center text-4xl mt-20 px-4">The quiz could not be loaded</h1>
 	{/if}
 {/await}

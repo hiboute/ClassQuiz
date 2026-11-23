@@ -80,9 +80,9 @@ SPDX-License-Identifier: MPL-2.0
 	};
 </script>
 
-<div class="h-full">
+<div class="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 pb-16">
 	<div class="grid grid-cols-6 overflow-hidden h-full">
-		<div class="border-r-4 border-black h-full">
+		<div class="h-full pe-4">
 			<img src={image_url} />
 		</div>
 		<div class="col-start-2 col-end-7 overflow-scroll">
@@ -130,11 +130,11 @@ SPDX-License-Identifier: MPL-2.0
 </div>
 {#if finished}
 	<div
-		class="fixed top-0 left-0 w-full h-full z-30 bg-black/90 flex justify-center flex-col"
+		class="fixed top-0 left-0 w-full h-full z-30 bg-[#090924]/95 flex justify-center flex-col"
 		out:fade|global={{ duration: 200 }}
 		in:fade|global={{ duration: 300 }}
 	>
-		<h1 class="m-auto text-4xl" in:fade|global={{ delay: 3500 }}>
+		<h1 class="m-auto bt-headline text-4xl" in:fade|global={{ delay: 3500 }}>
 			{$t('avatar_settings.thats_you')}
 		</h1>
 		<img

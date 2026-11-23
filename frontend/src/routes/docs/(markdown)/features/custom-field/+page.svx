@@ -14,9 +14,7 @@ then it will be displayed if a player wants to join.
 
 ## Use Case
 
-Imagine you're a teacher, and you want to know the real names of your students, but you don't want everyone to see
-who is behind which username. That's where the custom-field comes into play. Players can enter their username and their
-real name and only the admin (you) can see which username belongs to which real name and which real names exist. The
+Imagine you host a quiz and want to know which team each player belongs to, without showing it on the big screen. That's where the custom-field comes into play. Players enter their nickname and the extra field, and only the host can see which nickname belongs to which value. The
 data can be obtained by downloading the quiz-results at the end. In the spreadsheet, you can then see all the data.
 
 ## Notes

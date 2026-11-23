@@ -1,144 +1,204 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 Charles-Henri ROBICHE
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
+<!--
+	Phone end screen, from the `podium` payload: the player's final rank big,
+	their total, and the top 3. A quiet glow celebrates a podium finish.
+	Ultraviolet world, like the podium on the big screen.
+-->
 <script lang="ts">
-	import { getLocalization } from '$lib/i18n';
-
-	const { t } = getLocalization();
+	import Logo from '$lib/brand/Logo.svelte';
+	import PhoneShell from '$lib/play/phone/PhoneShell.svelte';
+	import { formatPoints, ordinalSuffix, type PodiumData } from '$lib/play/phone/phone';
 
 	interface Props {
-		question_count: number;
-		final_results: Array<null> | Array<Array<PlayerAnswer>>;
-	}
-
-	let { question_count, final_results }: Props = $props();
-
-	interface PlayerAnswer {
+		podium: PodiumData | null;
 		username: string;
-		answer: string;
-		right: string;
+		/** total known on the phone, used while the podium is on its way */
+		fallback_total?: number | null;
 	}
 
-	let data_available = $state(false);
-	let winners_arr = $state();
+	let { podium, username, fallback_total = null }: Props = $props();
 
-	const getWinnersSorted = () => {
-		let winners = {};
-		let q_count = question_count;
-		console.log(
-			JSON.stringify(final_results),
-			JSON.stringify(final_results) === '{}',
-			'HI!!!!!',
-			JSON.stringify(final_results) === JSON.stringify({})
-		);
-
-		function sortObjectbyValue(obj) {
-			const ret = {};
-			Object.keys(obj)
-				.sort((a, b) => obj[b] - obj[a])
-				.forEach((s) => (ret[s] = obj[s]));
-			return ret;
-		}
-
-		try {
-			for (let i = 0; i < q_count; i++) {
-				let q_res = final_results[i];
-				if (!q_res) {
-					continue;
-				} else {
-					q_res = final_results[String(i)];
-					if (!q_res) {
-						continue;
-					}
-				}
-				console.log(q_res);
-				for (let j = 0; j < q_res.length; j++) {
-					let res = q_res[j];
-					if (res['right']) {
-						if (winners[res['username']] === undefined) {
-							winners[res['username']] = 0;
-						}
-						winners[res['username']] += 1;
-					}
-				}
-			}
-
-			let close_to_res = sortObjectbyValue(winners);
-			winners_arr = [];
-			for (const i in close_to_res) {
-				winners_arr.push([i, close_to_res[i]]);
-			}
-
-			winners_arr = winners_arr.sort(function (a, b) {
-				return b[1] - a[1];
-			});
-			data_available = true;
-			return close_to_res;
-		} catch (e) {
-			console.log(e);
-			data_available = false;
-		}
-	};
-	let winners = getWinnersSorted();
+	const rank = $derived(podium?.rank ?? null);
+	const total = $derived(podium?.total ?? fallback_total ?? 0);
+	const on_podium = $derived(rank !== null && rank >= 1 && rank <= 3);
+	const kicker = $derived(
+		rank === 1 ? 'Winner' : on_podium ? 'On the podium' : rank !== null ? 'You finished' : 'Game over'
+	);
 </script>
 
-<div>
-	<h1 class="mx-auto text-center text-6xl mt-8">{$t('play_page.end_sentence')}</h1>
-	{#if data_available}
-		{#if winners_arr[0][0] === undefined}
-			<div class="flex justify-center">
-				<h1 class="text-3xl">{$t('admin_page.no_answers')}</h1>
-			</div>
+<PhoneShell world="ultraviolet" mesh state="end">
+	<Logo width={160} />
+
+	<div class="pe-main" data-testid="end-screen">
+		<span class="bt-eyebrow">Final results</span>
+		{#if podium === null}
+			<p class="pe-wait">
+				<span class="bt-kicker pe-kicker">Thanks for playing</span>
+				<span class="bt-headline pe-headline">Look at the big screen</span>
+			</p>
 		{:else}
-			<div class="flex mx-auto w-fit flex-col pt-8 gap-2">
-				<div>
-					<p class="text-3xl text-center">
-						{$t('play_page.1st_place')}:
-						<span class="underline">{winners_arr[0][0]}</span>
-						<span
-							>{$t('play_page.with_out_of', {
-								correct_questions: winners_arr[0][1] ?? 0,
-								total_question_count: question_count
-							})}</span
+			<div class="pe-rank" class:pe-glow={on_podium}>
+				<span class="bt-kicker pe-kicker">{kicker}</span>
+				{#if rank !== null}
+					<div class="pe-num bt-num">
+						<span class:bt-text-aurora={on_podium}>{rank}</span><sup
+							class:bt-text-aurora={on_podium}>{ordinalSuffix(rank)}</sup
 						>
-					</p>
+					</div>
+					<div class="pe-of">of {formatPoints(podium.total_players)} players</div>
+				{/if}
+				<div class="pe-total">
+					<b class="bt-num">{formatPoints(total)}</b> points
 				</div>
-				{#if winners_arr.length >= 2 && winners_arr[1][0] !== undefined}
-					<div>
-						<p class="text-2xl text-center">
-							{$t('play_page.2nd_place')}:
-							<span class="underline">{winners_arr[1][0]}</span>
-							<span
-								>{$t('play_page.with_out_of', {
-									correct_questions: winners_arr[1][1] ?? 0,
-									total_question_count: question_count
-								})}</span
-							>
-						</p>
-					</div>
-				{/if}
-				{#if winners_arr.length >= 3 && winners_arr[2][0] !== undefined}
-					<div>
-						<p class="text-xl text-center">
-							{$t('play_page.3rd place')}:
-							<span class="underline">{winners_arr[2][0]}</span>
-							<span>
-								{$t('play_page.with_out_of', {
-									correct_questions: winners_arr[2][1] ?? 0,
-									total_question_count: question_count
-								})}
-							</span>
-						</p>
-					</div>
-				{/if}
 			</div>
+
+			{#if podium.top.length}
+				<ol class="pe-top" aria-label="Top 3">
+					{#each podium.top as row (row.rank)}
+						<li class="pe-row" class:pe-me={row.username === username}>
+							<span class="pe-row-rank bt-num">{row.rank}</span>
+							<span class="pe-row-name">{row.username}</span>
+							<span class="pe-row-score bt-num">{formatPoints(row.score)}</span>
+						</li>
+					{/each}
+				</ol>
+			{/if}
 		{/if}
-	{:else}
-		<div class="flex justify-center">
-			<h1 class="text-3xl">{$t('admin_page.no_answers')}</h1>
-		</div>
-	{/if}
-</div>
+	</div>
+
+	<p class="pe-foot">Thanks for playing, {username}.</p>
+</PhoneShell>
+
+<style>
+	.pe-main {
+		margin: auto 0;
+		padding: 28px 0;
+	}
+	.pe-rank {
+		position: relative;
+		margin-top: 14px;
+	}
+	.pe-glow::before {
+		content: '';
+		position: absolute;
+		z-index: -1;
+		left: -40px;
+		top: -10px;
+		width: 280px;
+		height: 220px;
+		border-radius: 50%;
+		background: radial-gradient(
+			closest-side,
+			rgba(93, 181, 223, 0.45),
+			rgba(39, 190, 130, 0.18) 60%,
+			transparent
+		);
+		filter: blur(8px);
+		animation: pe-breathe 3.2s ease-in-out infinite;
+	}
+	@keyframes pe-breathe {
+		50% {
+			opacity: 0.55;
+			transform: scale(1.06);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.pe-glow::before {
+			animation: none;
+		}
+	}
+	.pe-kicker {
+		font-size: 20px;
+	}
+	.pe-num {
+		display: flex;
+		align-items: flex-start;
+		margin-top: 14px;
+		font-size: 140px;
+		line-height: 0.86;
+	}
+	.pe-num sup {
+		font-size: 48px;
+		line-height: 1;
+		margin-left: 4px;
+		vertical-align: baseline;
+		position: static;
+	}
+	.pe-of {
+		margin-top: 12px;
+		font-size: 20px;
+	}
+	.pe-total {
+		margin-top: 18px;
+		font-size: 18px;
+		color: var(--ink-muted);
+	}
+	.pe-total b {
+		font-size: 34px;
+		color: var(--ink);
+	}
+	.pe-wait {
+		margin: 14px 0 0;
+	}
+	.pe-headline {
+		font-size: 40px;
+		margin-top: 4px;
+	}
+	.pe-top {
+		list-style: none;
+		margin: 32px 0 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.pe-row {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		min-height: 60px;
+		padding: 0 18px 0 14px;
+		border-radius: var(--radius-bt-xl);
+		background: var(--fill-glass);
+	}
+	.pe-me {
+		background: var(--fill-glass-strong);
+	}
+	.pe-row-rank {
+		flex: none;
+		width: 36px;
+		height: 36px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-bt-md);
+		background: var(--fill-deep);
+		font-size: 20px;
+		line-height: 1;
+	}
+	.pe-row-name {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 18px;
+		font-weight: 700;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.pe-row-score {
+		flex: none;
+		font-size: 20px;
+		line-height: 1;
+	}
+	.pe-foot {
+		margin: 0;
+		font-size: 15px;
+		color: var(--ink-muted);
+	}
+</style>

@@ -13,6 +13,9 @@ SPDX-License-Identifier: MPL-2.0
 	import CircularTimer from '$lib/play/circular_progress.svelte';
 	import { getLocalization } from '$lib/i18n';
 	import { navbarVisible } from '$lib/stores.svelte.ts';
+	import World from '$lib/brand/World.svelte';
+	import ShapeMark from '$lib/brand/ShapeMark.svelte';
+	import { answerStyle, QUESTION_WORLDS, type World as WorldName } from '$lib/brand/answers';
 
 	const data = {
 		game_pin: page.url.searchParams.get('game_pin'),
@@ -38,7 +41,7 @@ SPDX-License-Identifier: MPL-2.0
 	let control_visible = $state(false);
 
 	if (!data.game_id || !data.game_pin) {
-		console.log('Error!');
+		console.log('Missing game_pin or game_id');
 	} else {
 		socket.emit('register_as_remote', data);
 	}
@@ -114,6 +117,12 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	});
 
+	let world: WorldName = $derived(
+		game_started && selected_question >= 0
+			? QUESTION_WORLDS[selected_question % QUESTION_WORLDS.length]
+			: 'indigo'
+	);
+
 	socket.on('solutions', (_) => {
 		timer_res = '0';
 		clearInterval(timer_interval);
@@ -178,146 +187,183 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:window onbeforeunload={confirmUnload} />
-{#if game_started}
-	{#if selected_question + 1 === game_data.questions.length && ((timer_res === '0' && question_results !== null) || game_data?.questions?.[selected_question]?.type === QuizQuestionType.SLIDE)}
-		{#if JSON.stringify(final_results) === JSON.stringify([null])}
-			<button onclick={get_final_results} class="admin-button">Get final results </button>
-		{:else}
-			<div class="w-screen flex justify-center mt-16">
-				<button onclick={request_answer_export} class="admin-button"
-					>{$t('admin_page.export_results')}</button
-				>
-			</div>
-		{/if}
-	{:else if timer_res === '0' || selected_question === -1}
-		{#if (selected_question + 1 !== game_data.questions.length && question_results !== null) || selected_question === -1}
-			<button
-				onclick={() => {
-					set_question_number(selected_question + 1);
-				}}
-				class="admin-button"
-				>Next Question ({selected_question + 2})
-			</button>
-		{/if}
-		{#if question_results === null && selected_question !== -1}
-			{#if game_data.questions[selected_question].type === QuizQuestionType.SLIDE}
-				<button
-					onclick={() => {
-						set_question_number(selected_question + 1);
-					}}
-					class="admin-button"
-					>Next Question ({selected_question + 2})
-				</button>
-			{:else}
-				<button onclick={get_question_results} class="admin-button">Show results </button>
-			{/if}
-		{/if}
-	{:else if selected_question !== -1}
-		{#if game_data.questions[selected_question].type === QuizQuestionType.SLIDE}
-			<button
-				onclick={() => {
-					set_question_number(selected_question + 1);
-				}}
-				class="admin-button"
-				>Next Question ({selected_question + 2})
-			</button>
-		{:else}
-			<button onclick={show_solutions} class="admin-button"
-				>Stop time and show solutions
-			</button>
-		{/if}
-	{/if}
-	{#if selected_question === -1}
-		<h1>{game_data.title}</h1>
-		<p>{game_data.description}</p>
-	{:else if game_data.questions[selected_question].type === QuizQuestionType.SLIDE}
-		{#await import('$lib/play/admin/slide.svelte')}
-			<Spinner my_20={false} />
-		{:then c}
-			<c.default question={game_data.questions[selected_question]} />
-		{/await}
-	{:else}
-		<div class="flex flex-col justify-center w-screen h-1/6">
-			<h1 class="text-6xl text-center">
-				{@html game_data.questions[selected_question].question}
-			</h1>
-			<!--			<span class='text-center py-2 text-lg'>{$t('admin_page.time_left')}: {timer_res}</span>-->
-			<div class="mx-auto my-2">
-				<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
-			</div>
-			{#if game_data.questions[selected_question].image !== null}
-				<div>
-					<img
-						src="/api/v1/storage/download/{game_data.questions[selected_question]
-							.image}"
-						class="max-h-[20vh] object-cover mx-auto mb-8 w-auto"
-						alt="Content for Question"
-					/>
-				</div>
-			{/if}
-			{#if game_data.questions[selected_question].type === QuizQuestionType.ABCD || game_data.questions[selected_question].type === QuizQuestionType.VOTING}
-				<div class="grid grid-cols-2 gap-2 w-full p-4">
-					{#each game_data.questions[selected_question].answers as answer, i}
-						<div
-							class="rounded-lg h-fit flex"
-							style="background-color: {answer.color ?? '#B45309'}"
-							class:opacity-50={!answer.right &&
-								game_data.questions[selected_question].type ===
-									QuizQuestionType.ABCD}
+<svelte:head>
+	<title>India Tech Hub Live Quiz - Remote</title>
+</svelte:head>
+<World {world}>
+	<div class="mx-auto max-w-3xl px-4 py-6 flex flex-col gap-4">
+		{#if game_started}
+			{#if selected_question + 1 === game_data.questions.length && ((timer_res === '0' && question_results !== null) || game_data?.questions?.[selected_question]?.type === QuizQuestionType.SLIDE)}
+				{#if JSON.stringify(final_results) === JSON.stringify([null])}
+					<button
+						onclick={get_final_results}
+						class="bt-btn-primary bt-btn-lg bt-btn-block">Get final results</button
+					>
+				{:else}
+					<div class="flex justify-center mt-8">
+						<button
+							onclick={request_answer_export}
+							class="bt-btn-primary bt-btn-lg bt-btn-block"
+							>{$t('admin_page.export_results')}</button
 						>
-							<span class="text-center text-2xl px-2 py-4 w-full text-black"
-								>{answer.answer}</span
-							>
-							<span class="pl-4 w-10"></span>
+					</div>
+				{/if}
+			{:else if timer_res === '0' || selected_question === -1}
+				{#if (selected_question + 1 !== game_data.questions.length && question_results !== null) || selected_question === -1}
+					<button
+						onclick={() => {
+							set_question_number(selected_question + 1);
+						}}
+						class="bt-btn-primary bt-btn-lg bt-btn-block"
+						>Next question ({selected_question + 2})
+					</button>
+				{/if}
+				{#if question_results === null && selected_question !== -1}
+					{#if game_data.questions[selected_question].type === QuizQuestionType.SLIDE}
+						<button
+							onclick={() => {
+								set_question_number(selected_question + 1);
+							}}
+							class="bt-btn-primary bt-btn-lg bt-btn-block"
+							>Next question ({selected_question + 2})
+						</button>
+					{:else}
+						<button
+							onclick={get_question_results}
+							class="bt-btn-primary bt-btn-lg bt-btn-block">Show results</button
+						>
+					{/if}
+				{/if}
+			{:else if selected_question !== -1}
+				{#if game_data.questions[selected_question].type === QuizQuestionType.SLIDE}
+					<button
+						onclick={() => {
+							set_question_number(selected_question + 1);
+						}}
+						class="bt-btn-primary bt-btn-lg bt-btn-block"
+						>Next question ({selected_question + 2})
+					</button>
+				{:else}
+					<button onclick={show_solutions} class="bt-btn-primary bt-btn-lg bt-btn-block"
+						>Stop time and show answers
+					</button>
+				{/if}
+			{/if}
+			{#if selected_question === -1}
+				<div class="bt-glass p-6 text-center">
+					<span class="bt-eyebrow text-ink-muted">Live Quiz</span>
+					<h1 class="mt-2 text-3xl font-black uppercase">{@html game_data.title}</h1>
+					<p class="mt-2 text-ink-muted">{@html game_data.description}</p>
+				</div>
+			{:else if game_data.questions[selected_question].type === QuizQuestionType.SLIDE}
+				{#await import('$lib/play/admin/slide.svelte')}
+					<Spinner my_20={false} />
+				{:then c}
+					<c.default question={game_data.questions[selected_question]} />
+				{/await}
+			{:else}
+				<div class="flex flex-col justify-center w-full">
+					<span class="bt-eyebrow text-ink-muted text-center"
+						>Question {selected_question + 1} of {game_data.questions.length}</span
+					>
+					<h1 class="mt-2 text-3xl sm:text-4xl font-black text-center">
+						{@html game_data.questions[selected_question].question}
+					</h1>
+					<!--			<span class='text-center py-2 text-lg'>{$t('admin_page.time_left')}: {timer_res}</span>-->
+					<div class="mx-auto my-2">
+						<CircularTimer
+							text={timer_res}
+							progress={circular_progress}
+							color="#feffff"
+						/>
+					</div>
+					{#if game_data.questions[selected_question].image !== null}
+						<div>
+							<img
+								src="/api/v1/storage/download/{game_data.questions[
+									selected_question
+								].image}"
+								class="max-h-[20vh] object-cover mx-auto mb-6 w-auto rounded-card"
+								alt="Content for Question"
+							/>
 						</div>
-					{/each}
+					{/if}
+					{#if game_data.questions[selected_question].type === QuizQuestionType.ABCD || game_data.questions[selected_question].type === QuizQuestionType.VOTING}
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full py-4">
+							{#each game_data.questions[selected_question].answers as answer, i}
+								<div
+									class="{answerStyle(i).className} min-h-16 px-3 py-3"
+									class:bt-tile-dim={!answer.right &&
+										game_data.questions[selected_question].type ===
+											QuizQuestionType.ABCD}
+								>
+									<span class="bt-tile-mark w-10 h-10">
+										<ShapeMark
+											index={i}
+											size={22}
+											title={answerStyle(i).label}
+										/>
+									</span>
+									<span class="text-lg">{answer.answer}</span>
+								</div>
+							{/each}
+						</div>
+					{/if}
 				</div>
 			{/if}
-		</div>
-	{/if}
 
-	{#if timer_res === '0' && JSON.stringify(final_results) === JSON.stringify( [null] ) && game_data.questions[selected_question].type !== QuizQuestionType.SLIDE}
-		{#if game_data.questions[selected_question].type === QuizQuestionType.VOTING && question_results}
-			{#await import('$lib/play/admin/voting_results.svelte')}
-				<Spinner />
-			{:then c}
-				<c.default
-					bind:data={question_results}
-					bind:question={game_data.questions[selected_question]}
-				/>
-			{/await}
+			{#if timer_res === '0' && JSON.stringify(final_results) === JSON.stringify( [null] ) && game_data.questions[selected_question].type !== QuizQuestionType.SLIDE}
+				{#if game_data.questions[selected_question].type === QuizQuestionType.VOTING && question_results}
+					{#await import('$lib/play/admin/voting_results.svelte')}
+						<Spinner />
+					{:then c}
+						<c.default
+							bind:data={question_results}
+							bind:question={game_data.questions[selected_question]}
+						/>
+					{/await}
+				{/if}
+			{/if}
+		{:else}
+			<button onclick={start_game} class="bt-btn-primary bt-btn-lg bt-btn-block"
+				>Start game</button
+			>
+
+			<div class="bt-glass p-6">
+				<span class="bt-eyebrow text-ink-muted"
+					>Players <span class="bt-num text-ink">{players.length}</span></span
+				>
+				{#await get_already_joined_players()}
+					<Spinner my_20={false} />
+				{:then _}
+					<ul class="mt-4 flex flex-wrap gap-2">
+						{#each players as player}
+							<li class="bt-glass bt-glass-strong px-4 py-1.5 !rounded-full">
+								{player.username}
+							</li>
+						{/each}
+					</ul>
+				{/await}
+			</div>
 		{/if}
-	{/if}
-{:else}
-	<button onclick={start_game} class="admin-button">Start Game!</button>
-
-	<h2>Players:</h2>
-	{#await get_already_joined_players()}
-		<Spinner my_20={false} />
-	{:then _}
-		<div>
-			<ul>
-				{#each players as player}
-					<li>{player.username}</li>
-				{/each}
-			</ul>
-		</div>
-	{/await}
-{/if}
-<div class="fixed top-0 right-0">
+	</div>
+</World>
+<div class="fixed top-3 right-3 z-10">
 	{#if control_visible}
 		<button
+			class="bt-btn-ghost !min-h-9 !px-4 !text-xs"
 			onclick={() => {
 				socket.emit('set_control_visibility', { visible: false });
 			}}
-			>Hide Controls
+			>Hide controls
 		</button>
 	{:else}
 		<button
+			class="bt-btn-ghost !min-h-9 !px-4 !text-xs"
 			onclick={() => {
 				socket.emit('set_control_visibility', { visible: true });
 			}}
-			>Show Controls
+			>Show controls
 		</button>
 	{/if}
 </div>

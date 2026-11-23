@@ -9,74 +9,80 @@ SPDX-License-Identifier: MPL-2.0
 
 	const { t } = getLocalization();
 	interface Props {
-		scores: {
-			[key: string]: string;
-		};
-		custom_field: {
-			[key: string]: string;
-		};
-		answers: { [key: string]: any }[];
+		scores: { [key: string]: string };
+		custom_field: { [key: string]: string };
+		answers: any[][];
 	}
 
 	let { scores, custom_field, answers }: Props = $props();
 
 	let usernames = $derived(
-        Object.keys(scores).sort((a, b) => {
-            const scoreA = parseFloat(scores[a]) || 0;
-            const scoreB = parseFloat(scores[b]) || 0;
-            return scoreB - scoreA;
-        })
-    );
+		Object.keys(scores).sort((a, b) => (parseFloat(scores[b]) || 0) - (parseFloat(scores[a]) || 0))
+	);
 
-	const correctCounts = {};
-	answers.forEach((questionAnswers) => {
-		questionAnswers.forEach((answer) => {
-			const user = answer.username;
-			if (!correctCounts[user]) {
-				correctCounts[user] = 0;
+	const correctCounts = $derived.by(() => {
+		const counts: Record<string, number> = {};
+		for (const questionAnswers of answers ?? []) {
+			for (const answer of questionAnswers ?? []) {
+				counts[answer.username] = (counts[answer.username] ?? 0) + (answer.right ? 1 : 0);
 			}
-			if (answer.right) {
-				correctCounts[user] += 1;
-			}
-		});
+		}
+		return counts;
 	});
+	const has_custom = $derived(Object.keys(custom_field ?? {}).length !== 0);
+	let filter = $state('');
+	const shown = $derived(
+		filter.trim()
+			? usernames.filter((u) => u.toLowerCase().includes(filter.trim().toLowerCase()))
+			: usernames
+	);
 </script>
 
-<div class="w-full">
-	<div class="flex justify-center w-full">
-		<table class="w-11/12 m-auto">
+<section class="bt-glass bt-glass-faint p-4 sm:p-7">
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<span class="bt-eyebrow text-ink-muted">{usernames.length} players</span>
+		<input
+			type="search"
+			bind:value={filter}
+			placeholder="Find a player"
+			aria-label="Find a player"
+			class="bt-input !text-sm !py-2.5 !px-4 max-w-56"
+		/>
+	</div>
+	<div class="mt-4 overflow-x-auto -mx-2">
+		<table class="min-w-full text-sm">
 			<thead>
-				<tr class="border-b-2 dark:border-gray-500 text-left border-gray-300">
-					<th class="border-r dark:border-gray-500 p-1 mx-auto border-gray-300"
-						>{$t('result_page.player_name')}
-					</th>
-					<th class="border-r dark:border-gray-500 p-1 mx-auto border-gray-300"
-						>{$t('result_page.player_correct_questions')}
-					</th>
-					<th class="p-1 mx-auto">{$t('result_page.player_score')}</th>
-					{#if Object.keys(custom_field).length !== 0}
-						<th class="border-l dark:border-gray-500 p-1 mx-auto border-gray-300"
-							>{$t('result_page.custom_field')}
-						</th>
+				<tr class="text-ink-muted">
+					<th class="px-2 py-2 text-start font-normal whitespace-nowrap uppercase text-[11px] tracking-[2px]">#</th>
+					<th class="px-2 py-2 text-start font-normal whitespace-nowrap uppercase text-[11px] tracking-[2px]"
+						>{$t('result_page.player_name')}</th
+					>
+					<th class="px-2 py-2 text-end font-normal whitespace-nowrap uppercase text-[11px] tracking-[2px]"
+						>{$t('result_page.player_correct_questions')}</th
+					>
+					<th class="px-2 py-2 text-end font-normal whitespace-nowrap uppercase text-[11px] tracking-[2px]"
+						>{$t('result_page.player_score')}</th
+					>
+					{#if has_custom}
+						<th class="px-2 py-2 text-start font-normal whitespace-nowrap uppercase text-[11px] tracking-[2px]"
+							>{$t('result_page.custom_field')}</th
+						>
 					{/if}
 				</tr>
 			</thead>
 			<tbody>
-				{#each usernames as uname}
-					<tr class="text-left">
-						<td class="border-r dark:border-gray-500 p-1 border-gray-300">{uname}</td>
-						<td class="border-r dark:border-gray-500 p-1 border-gray-300"
-							>{correctCounts[uname]}</td
-						>
-						<td class="p-1">{scores[uname]}</td>
-						{#if custom_field[uname]}
-							<td class="border-l dark:border-gray-500 p-1 border-gray-300"
-								>{custom_field[uname]}</td
-							>
+				{#each shown as uname}
+					<tr class="border-t border-white/10">
+						<td class="px-2 py-3 tabular-nums text-ink-muted">{usernames.indexOf(uname) + 1}</td>
+						<td class="px-2 py-3 font-bold">{uname}</td>
+						<td class="px-2 py-3 text-end tabular-nums">{correctCounts[uname] ?? 0}</td>
+						<td class="px-2 py-3 text-end tabular-nums font-black">{scores[uname]}</td>
+						{#if has_custom}
+							<td class="px-2 py-3">{custom_field[uname] ?? ''}</td>
 						{/if}
 					</tr>
 				{/each}
 			</tbody>
 		</table>
 	</div>
-</div>
+</section>

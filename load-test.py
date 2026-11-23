@@ -9,9 +9,9 @@ Quiz App Load Tester (Playwright)
 - Workflow per client:
   1) Open http://localhost:8000/play
   2) Fill game key (default "620306"), submit
-  3) Wait for name field, enter "client-<id>", click "Abschicken"
-  4) Wait for game start (#progress-circle or answer grid)
-  5) Repeatedly click a random answer button; wait for next question (buttons enabled again)
+  3) Enter nickname "client-<id>", tap Join (data-testid selectors)
+  4) Wait for the first answer screen (data-testid="answer-tile")
+  5) Repeatedly tap a random tile; wait for "locked in", then the next question
 - Measures:
   * Page load time for /play (goto -> networkidle/domcontentloaded)
   * All REST calls (resource_type in {'xhr','fetch'}) with durations (request -> finished)
@@ -23,7 +23,8 @@ Usage examples:
     python load_quiz.py --csv metrics.csv --json metrics.json
 
 Tips:
-- If your "Submit"/"Abschicken" button texts differ, adjust selectors below.
+- Selectors use the data-testid attributes of the phone screens (pin-input,
+  nickname-input, join-submit, answer-tile, answer-submit, answer-locked).
 - For heavy loads, consider --ramp-up 20 to spread start times.
 """
 
@@ -191,56 +192,46 @@ class Aggregator:
 # ---------- Client logic ----------
 
 
+TILE = '[data-testid="answer-tile"]'
+LOCKED = '[data-testid="answer-locked"], [data-testid="time-up"], [data-testid="result-screen"]'
+
+
 async def wait_for_game_ui(page: Page, timeout_ms: int) -> None:
     """
-    Wait until the game screen appears: either #progress-circle
-    or the answer grid with buttons.
+    Wait until the first answer screen appears: the brand answer tiles
+    (data-testid="answer-tile"), after the waiting and get-ready screens.
     """
-    try:
-        await page.wait_for_selector("#progress-circle", state="visible", timeout=timeout_ms)
-        return
-    except Exception:
-        pass
-    # Answer grid fallback
-    await page.wait_for_selector("div.grid button", state="visible", timeout=timeout_ms)
+    await page.wait_for_selector(TILE, state="visible", timeout=timeout_ms)
 
 
 async def click_random_answer(page: Page, timeout_ms: int) -> None:
     """
-    Click a random enabled answer button, then wait for the next question
-    by waiting for buttons to be disabled then re-enabled.
+    Tap a random answer tile, wait for the "Answer locked in" state, then
+    wait for the next question's tiles (they are rendered anew each question).
     """
-    # Ensure buttons are visible
-    await page.wait_for_selector("div.grid button", state="visible", timeout=timeout_ms)
-    # Pick among currently enabled buttons
-    enabled_locator = page.locator("div.grid button:not([disabled])")
+    await page.wait_for_selector(TILE, state="visible", timeout=timeout_ms)
+    enabled_locator = page.locator(f"{TILE}:not([disabled])")
     count = await enabled_locator.count()
-    # If none enabled (edge), wait briefly and retry once
     if count == 0:
         await page.wait_for_timeout(200)
         count = await enabled_locator.count()
     if count == 0:
-        # As a last resort click first button if present
-        any_btns = page.locator("div.grid button")
-        if await any_btns.count() > 0:
-            await any_btns.nth(0).click()
         return
     idx = random.randrange(count)
     await enabled_locator.nth(idx).click()
 
-    # Wait for transient disabled state (server evaluating question)
-    # Then wait for next set to become enabled again
+    # CHECK questions need a "Lock in" tap after selecting
+    submit = page.locator('[data-testid="answer-submit"]:not([disabled])')
+    if await submit.count() > 0:
+        await submit.first.click()
+
+    # Locked in (or time up / results): the tiles leave the screen
     try:
-        await page.wait_for_selector("div.grid button[disabled]", state="attached", timeout=timeout_ms)
+        await page.wait_for_selector(LOCKED, state="visible", timeout=timeout_ms)
     except Exception:
-        # Sometimes they never disable; just proceed
         pass
-    # Now wait until enabled buttons appear again (next question)
-    try:
-        await page.wait_for_selector("div.grid button:not([disabled])", state="visible", timeout=timeout_ms)
-    except Exception:
-        # If not re-enabled, at least ensure buttons are visible again
-        await page.wait_for_selector("div.grid button", state="visible", timeout=timeout_ms)
+    # Next question: tiles appear again
+    await page.wait_for_selector(TILE, state="visible", timeout=timeout_ms)
 
 
 def just_path(url: str) -> str:
@@ -349,32 +340,27 @@ async def run_client(
         )
         await context.close()
         return
-    # Step 2: Enter key and submit
+    # Step 2: Enter the game PIN (skipped when the URL carries ?pin=)
     try:
-        # Fill any visible text input (assumed "key")
-        await page.wait_for_selector('input[inputmode="numeric"]:visible', timeout=timeouts["ui"])
-        key_input = page.locator('input[inputmode="numeric"]:visible').first
-        await key_input.fill(key_value)
+        await page.wait_for_selector('[data-testid="pin-input"]', state="visible", timeout=timeouts["ui"])
+        key_input = page.locator('[data-testid="pin-input"]').first
+        if (await key_input.input_value()) != key_value:
+            await key_input.fill(key_value)
     except Exception:
         # If this fails, client can't proceed
         await context.close()
         return
-    # Step 3: Wait for name field and click "Abschicken"
+    # Step 3: Nickname, then "Join" (enabled once the PIN is checked)
     try:
-        await page.wait_for_selector('button:has-text("Submit")', state="visible", timeout=timeouts["ui"])
-        name_btn = page.locator('button:has-text("Submit")').first
-        # Fill the visible text input again (assumed "name")
-        await page.wait_for_selector('input[maxlength="17"]:visible', timeout=timeouts["ui"])
-        name_input = page.locator('input[maxlength="17"]:visible').first
+        name_input = page.locator('[data-testid="nickname-input"]').first
         await name_input.fill(f"client-{client_id}")
-        await name_btn.click()
+        join_btn = page.locator('[data-testid="join-submit"]:not([disabled])').first
+        await join_btn.wait_for(state="visible", timeout=timeouts["ui"])
+        await join_btn.click()
+        await page.wait_for_selector('[data-testid="waiting-screen"], ' + TILE, timeout=timeouts["ui"])
     except Exception:
-        # If localized differently, try pressing Enter as fallback
-        try:
-            await page.keyboard.press("Enter")
-        except Exception:
-            await context.close()
-            return
+        await context.close()
+        return
 
     # Step 4: Wait for game start
     try:

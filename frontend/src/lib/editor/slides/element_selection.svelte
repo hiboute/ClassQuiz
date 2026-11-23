@@ -65,7 +65,7 @@ SPDX-License-Identifier: MPL-2.0
 		},
 		{
 			name: 'Circle',
-			description: 'Just a circle',
+			description: 'A filled circle',
 			type: ElementTypes.Circle,
 			icon: undefined,
 			shortcut: 'c'
@@ -73,24 +73,57 @@ SPDX-License-Identifier: MPL-2.0
 	];
 </script>
 
-<div
-	class="bg-white m-auto rounded-lg shadow-lg p-4 flex flex-col dark:bg-gray-600 h-fit"
-	transition:fade|global={{ duration: 100 }}
->
-	<ul>
+<div class="pop flex w-72 flex-col p-2" transition:fade|global={{ duration: 100 }}>
+	<ul class="flex flex-col gap-1">
 		{#each element_list as el}
-			<li
-				class="flex flex-row mt-4 w-full bg-gray-200 shadow-xl rounded-lg p-2 hover:bg-gray-300 hover:shadow-2xl hover:cursor-pointer transition dark:bg-gray-800"
-				onclick={() => {
-					selected_element = el.type;
-				}}
-			>
-				<div class="flex flex-col">
-					<h3 class="text-xl">{el.name}</h3>
-					<p>{el.description}</p>
-				</div>
-				<kbd class="my-auto ml-auto">{el.shortcut}</kbd>
+			<li>
+				<button
+					type="button"
+					class="item"
+					onclick={() => {
+						selected_element = el.type;
+					}}
+				>
+					<span class="min-w-0 flex-1">
+						<span class="block font-black uppercase tracking-[1px]">{el.name}</span>
+						<span class="block text-xs text-ink-muted">{el.description}</span>
+					</span>
+					<kbd>{el.shortcut}</kbd>
+				</button>
 			</li>
 		{/each}
 	</ul>
 </div>
+
+<style>
+	.pop {
+		border-radius: 18px;
+		background: rgba(14, 10, 46, 0.95);
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+	}
+	.item {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		width: 100%;
+		padding: 10px 12px;
+		border-radius: 12px;
+		text-align: left;
+	}
+	.item:hover,
+	.item:focus-visible {
+		background: var(--fill-glass-mid);
+		outline: none;
+	}
+	kbd {
+		display: grid;
+		place-items: center;
+		width: 26px;
+		height: 26px;
+		border-radius: 8px;
+		background: var(--fill-glass-mid);
+		font-family: var(--bt-font);
+		font-size: 12px;
+		text-transform: uppercase;
+	}
+</style>

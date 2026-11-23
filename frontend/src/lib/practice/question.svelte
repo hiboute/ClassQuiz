@@ -103,7 +103,7 @@ SPDX-License-Identifier: MPL-2.0
 	in:fly|global={{ x: 100 }}
 	out:fly|global={{ x: -100 }}
 >
-	<h1 class="text-3xl text-center">{@html question.question}</h1>
+	<h1 class="bt-headline text-[26px] lg:text-[40px] text-center">{@html question.question}</h1>
 	{#if question.image !== null}
 		<div>
 			<MediaComponent
@@ -119,11 +119,12 @@ SPDX-License-Identifier: MPL-2.0
 				{#each question.answers as answer, i}
 					<button
 						disabled
-						class:bg-green-500={question.answers[i].right}
-						class:bg-red-500={!question.answers[i].right}
 						class:text-xl={i === selected_answer}
 						class:underline={i === selected_answer}
-						class="p-2 rounded-lg flex justify-center w-full transition my-5 text-black"
+						class="p-3 rounded-[18px] flex justify-center w-full transition my-3 font-bold {question
+							.answers[i].right
+							? 'bg-[#27be82] text-black'
+							: 'bg-white/15'}"
 						>{answer.answer}</button
 					>
 				{/each}
@@ -134,7 +135,7 @@ SPDX-License-Identifier: MPL-2.0
 					<button
 						disabled={selected_answer !== undefined || timer_res === '0'}
 						type="button"
-						class="p-2 rounded-lg flex justify-center w-full transition bg-amber-300 my-5 disabled:grayscale text-black"
+						class="p-3 rounded-[18px] flex justify-center w-full transition bg-white/15 hover:bg-white/25 my-3 font-bold disabled:opacity-50"
 						onclick={() => {
 							selected_answer = i;
 							timer_res = '0';
@@ -143,7 +144,7 @@ SPDX-License-Identifier: MPL-2.0
 				{/each}
 				{#if timer_res === '0'}
 					<button
-						class="bg-orange-500 p-2 rounded-lg flex justify-center w-full transition my-5 text-black"
+						class="bt-btn-primary bt-btn-block my-3"
 						type="button"
 						onclick={() => {
 							show_results = true;
@@ -185,7 +186,7 @@ SPDX-License-Identifier: MPL-2.0
 				<div class="flex justify-center">
 					<button
 						type="button"
-						class="w-1/3 text-3xl bg-[#B07156] my-2 disabled:opacity-60 rounded-lg p-1 transition"
+						class="bt-btn-primary my-2"
 						disabled={selected_answer !== undefined}
 						onclick={() => {
 							selected_answer = slider_value[0];
@@ -201,7 +202,7 @@ SPDX-License-Identifier: MPL-2.0
 			<button
 				type="button"
 				disabled={selected_answer !== undefined || timer_res === '0'}
-				class="p-2 rounded-lg flex justify-center w-full transition bg-amber-300 my-5 disabled:grayscale text-black"
+				class="p-3 rounded-[18px] flex justify-center w-full transition bg-white/15 hover:bg-white/25 my-3 font-bold disabled:opacity-50"
 				onclick={() => {
 					selected_answer = i;
 					timer_res = '0';
@@ -223,7 +224,7 @@ SPDX-License-Identifier: MPL-2.0
 		{#if timer_res === '0'}
 			{#each question.answers as answer, i}
 				<div
-					class="p-2 rounded-lg flex justify-center w-full transition bg-gray-200 my-5 text-black"
+					class="p-3 rounded-[18px] flex justify-center w-full transition bg-white/15 my-3 font-bold"
 				>
 					{answer.answer}
 				</div>
@@ -233,16 +234,40 @@ SPDX-License-Identifier: MPL-2.0
 				<input
 					type="text"
 					bind:value={text_input}
-					class="bg-gray-50 focus:ring text-gray-900 rounded-lg focus:ring-blue-500 block w-full p-2 dark:bg-gray-700 dark:text-white dark:focus:ring-blue-500 outline-hidden transition text-center"
+					class="bt-input text-center"
 				/>
 			</div>
 			<div class="flex justify-center">
 				<button
 					type="button"
 					disabled={!text_input}
-					class="w-1/3 text-3xl bg-[#B07156] my-2 disabled:opacity-60 rounded-lg p-1 transition"
+					class="bt-btn-primary my-2"
 					onclick={() => {
 						selected_answer = text_input;
+						timer_res = '0';
+					}}>{$t('words.submit')}</button
+				>
+			</div>
+		{/if}
+	{:else if question.type === QuizQuestionType.WORD_CLOUD}
+		{#if selected_answer !== undefined || timer_res === '0'}
+			<p class="text-center mt-4">
+				{#if selected_answer}
+					You sent <span class="font-bold">{selected_answer}</span>.
+				{/if}
+				A word cloud has no right answer: in a live game, the big screen shows every word.
+			</p>
+		{:else}
+			<div class="flex justify-center mt-2">
+				<input type="text" maxlength="30" bind:value={text_input} class="bt-input text-center" />
+			</div>
+			<div class="flex justify-center">
+				<button
+					type="button"
+					disabled={!String(text_input ?? '').trim()}
+					class="bt-btn-primary my-2"
+					onclick={() => {
+						selected_answer = String(text_input).trim();
 						timer_res = '0';
 					}}>{$t('words.submit')}</button
 				>
@@ -311,7 +336,7 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			{/each}
 			<button
-				class="bg-[#B07156] hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg mt-2 transition w-full"
+				class="bt-btn-primary bt-btn-block mt-2"
 				type="button"
 				disabled={timer_res === '0'}
 				onclick={() => {
@@ -328,9 +353,10 @@ SPDX-License-Identifier: MPL-2.0
 					<button
 						type="button"
 						disabled
-						class:bg-green-500={question.answers[i].right}
-						class:bg-red-500={!question.answers[i].right}
-						class="p-2 rounded-lg flex justify-center w-full transition my-5 text-black"
+						class="p-3 rounded-[18px] flex justify-center w-full transition my-3 font-bold {question
+							.answers[i].right
+							? 'bg-[#27be82] text-black'
+							: 'bg-white/15'}"
 						>{answer.answer}</button
 					>
 				{/each}
@@ -341,7 +367,7 @@ SPDX-License-Identifier: MPL-2.0
 					<button
 						type="button"
 						disabled={selected_answer !== undefined || timer_res === '0'}
-						class="p-2 rounded-lg flex justify-center w-full transition bg-amber-300 my-5 disabled:grayscale text-black opacity-50"
+						class="p-3 rounded-[18px] flex justify-center w-full transition bg-white/15 my-3 font-bold opacity-50"
 						class:opacity-100={check_choice_selected[i]}
 						onclick={() => {
 							check_choice_selected[i] = !check_choice_selected[i];
@@ -357,7 +383,7 @@ SPDX-License-Identifier: MPL-2.0
 				{#if timer_res === '0'}
 					<button
 						type="button"
-						class="bg-orange-500 p-2 rounded-lg flex justify-center w-full transition my-5 text-black"
+						class="bt-btn-primary bt-btn-block my-3"
 						onclick={() => {
 							show_results = true;
 						}}>{$t('admin_page.get_results')}</button

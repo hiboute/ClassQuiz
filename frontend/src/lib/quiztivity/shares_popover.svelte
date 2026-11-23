@@ -176,8 +176,8 @@ SPDX-License-Identifier: MPL-2.0
 							disabled={share_available()}
 							onclick={() => {
 								navigator.share({
-									title: 'Quiztivity on ClassQuiz',
-									text: 'Play this Quiztivity now on ClassQuiz!',
+									title: 'Quiztivity on India Tech Hub Live Quiz',
+									text: 'Play this Quiztivity on India Tech Hub Live Quiz.',
 									url: `${window.location.origin}/quiztivity/share/${share.id}?ref=share`
 								});
 							}}

@@ -6,131 +6,60 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	let { session_data = {}, step, selected_method = $bindable() } = $props();
 
-	const set_available_methods = (step_var: number): string => {
-		if (step_var === 1) {
-			return session_data.step_1;
-		} else if (step_var === 2) {
-			return session_data.step_2;
+	const METHODS = [
+		{
+			id: 'PASSKEY',
+			title: 'Security key',
+			hint: 'Use a passkey or a hardware key',
+			// heroicons/key
+			icon: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z'
+		},
+		{
+			id: 'PASSWORD',
+			title: 'Password',
+			hint: 'Type your account password',
+			// heroicons/lock-closed
+			icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
+		},
+		{
+			id: 'TOTP',
+			title: 'Authenticator code',
+			hint: 'Six digits from your authenticator app',
+			// heroicons/clock
+			icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
 		}
-	};
-	let available_methods = $derived(set_available_methods(step));
+	];
+
+	let available_methods: string[] = $derived(
+		(step === 1 ? session_data.step_1 : step === 2 ? session_data.step_2 : []) ?? []
+	);
 </script>
 
-<div class="px-6 py-4">
-	<h2 class="text-3xl font-bold text-center text-gray-700 dark:text-white">ClassQuiz</h2>
+<div class="p-6 sm:p-8">
+	<span class="bt-eyebrow text-ink-muted mb-3">Sign in</span>
+	<h2 class="bt-headline text-[28px] sm:text-[34px]">
+		{step === 2 ? 'One more step' : 'Choose a method'}
+	</h2>
 
-	<div class="w-full mt-4">
-		<div class="dark:bg-gray-800 bg-white p-4 rounded-lg">
-			<ul class="flex flex-col gap-4">
-				{#if available_methods.includes('PASSKEY')}
-					<div
-						class="flex flex-row bg-gray-100 dark:bg-gray-700 rounded-lg p-2 hover:cursor-pointer hover:bg-gray-200 transition"
-						onclick={() => {
-							selected_method = 'PASSKEY';
-						}}
-						onkeyup={() => {
-							selected_method = 'PASSKEY';
-						}}
-					>
-						<!-- heroicons/key -->
-						<svg
-							class="w-12 h-12"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
+	<ul class="mt-6 flex flex-col gap-3">
+		{#each METHODS.filter((m) => available_methods.includes(m.id)) as m}
+			<li>
+				<button
+					type="button"
+					class="w-full flex items-center gap-4 rounded-[18px] bg-white/[0.08] hover:bg-white/[0.14] transition-colors p-4 text-start"
+					onclick={() => (selected_method = m.id)}
+				>
+					<span class="h-12 w-12 shrink-0 rounded-[12px] bg-[var(--fill-deep)] flex items-center justify-center">
+						<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"
+							><path stroke-linecap="round" stroke-linejoin="round" d={m.icon} /></svg
 						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-							/>
-						</svg>
-						<div class="ml-2">
-							<p>Key</p>
-							<p class="text-sm">Authenticate using a security key</p>
-						</div>
-					</div>
-				{/if}
-				{#if available_methods.includes('PASSWORD')}
-					<div
-						class="flex flex-row bg-gray-100 dark:bg-gray-700 rounded-lg p-2 hover:cursor-pointer hover:bg-gray-200 transition"
-						onclick={() => {
-							selected_method = 'PASSWORD';
-						}}
-						onkeyup={() => {
-							selected_method = 'PASSWORD';
-						}}
-					>
-						<!-- iconoir/password-cursor -->
-						<svg
-							class="w-12 h-12 dark:text-white"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								d="M21 13V8a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h7"
-								stroke="currentColor"
-								stroke-width="2.03"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-							<path
-								clip-rule="evenodd"
-								d="M20.879 16.917c.494.304.463 1.043-.045 1.101l-2.567.291-1.151 2.312c-.228.459-.933.234-1.05-.334l-1.255-6.116c-.099-.48.333-.782.75-.525l5.318 3.271z"
-								stroke="currentColor"
-								stroke-width="2.03"
-							/>
-							<path
-								d="M12 11.01l.01-.011M16 11.01l.01-.011M8 11.01l.01-.011"
-								stroke="currentColor"
-								stroke-width="2.03"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
-						<div class="ml-2">
-							<p>Password</p>
-							<p class="text-sm">Authenticate using a Password</p>
-						</div>
-					</div>
-				{/if}
-				{#if available_methods.includes('TOTP')}
-					<div
-						class="flex flex-row bg-gray-100 rounded-lg p-2 hover:cursor-pointer hover:bg-gray-200 transition"
-						onclick={() => {
-							selected_method = 'TOTP';
-						}}
-						onkeyup={() => {
-							selected_method = 'TOTP';
-						}}
-					>
-						<!-- heroicons/clock -->
-						<svg
-							class="w-12 h-12"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-						<div class="ml-2">
-							<p>Totp</p>
-							<p class="text-sm">Authenticate using a one-time password</p>
-						</div>
-					</div>
-				{/if}
-			</ul>
-		</div>
-	</div>
+					</span>
+					<span>
+						<span class="block font-bold">{m.title}</span>
+						<span class="block text-sm text-ink-muted">{m.hint}</span>
+					</span>
+				</button>
+			</li>
+		{/each}
+	</ul>
 </div>

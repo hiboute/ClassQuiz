@@ -65,8 +65,28 @@ export const dataSchema = yup.object({
 				question: yup.string().required('A question-title is required').max(299),
 				time: yup.number().required().positive('The time has to be positive'),
 				image: yup.string().nullable().lowercase(),
-				answers: yup.lazy((v) => {
+				points: yup.string().oneOf(['standard', 'double', 'none']).optional().nullable(),
+				answers: yup.lazy((v, options) => {
+					// Pick the schema from the question type when it is known, so an
+					// empty answer list reports a message instead of throwing.
+					switch (options?.parent?.type) {
+						case 'WORD_CLOUD':
+							return yup.mixed().nullable();
+						case 'ABCD':
+						case 'CHECK':
+							return ABCDQuestionSchema;
+						case 'TEXT':
+							return TextQuestionSchema;
+						case 'VOTING':
+						case 'ORDER':
+							return VotingQuestionSchema;
+						case 'RANGE':
+							return RangeQuestionSchema;
+					}
 					if (Array.isArray(v)) {
+						if (v.length === 0) {
+							return ABCDQuestionSchema;
+						}
 						if (typeof v[0].right === 'boolean') {
 							return ABCDQuestionSchema;
 						} else if (typeof v[0].case_sensitive === 'boolean') {

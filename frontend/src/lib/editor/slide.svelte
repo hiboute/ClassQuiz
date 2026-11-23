@@ -15,7 +15,6 @@ SPDX-License-Identifier: MPL-2.0
 	import Pikaso from 'pikaso';
 	import EditMenu from './slides/edit_menu.svelte';
 	import type { Konva, ShapeModel } from 'pikaso';
-	import { browser } from '$app/environment';
 
 	interface Props {
 		data?: Question;
@@ -45,13 +44,8 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	});
 
-	let darkMode = false;
-	if (browser) {
-		darkMode =
-			localStorage.theme === 'dark' ||
-			(!('theme' in localStorage) &&
-				window.matchMedia('(prefers-color-scheme: dark)').matches);
-	}
+	// the app is dark only: light selection handles on the dark slide surface
+	const darkMode = true;
 	const add_text_field = () => {
 		if (selected_element === ElementTypes.Text) {
 			canvas.shapes.label.insert({
@@ -61,7 +55,9 @@ SPDX-License-Identifier: MPL-2.0
 				},
 				text: {
 					text: 'Text',
-					fontSize: 20
+					fontSize: 24,
+					fill: '#feffff',
+					fontFamily: "'LOREAL Essentielle', sans-serif"
 				}
 			});
 		} else if (selected_element === ElementTypes.Headline) {
@@ -72,7 +68,10 @@ SPDX-License-Identifier: MPL-2.0
 				},
 				text: {
 					text: 'Headline',
-					fontSize: 35
+					fontSize: 48,
+					fill: '#feffff',
+					fontStyle: 'bold',
+					fontFamily: "'LOREAL Essentielle', sans-serif"
 				}
 			});
 		} else if (selected_element === ElementTypes.Circle) {
@@ -80,7 +79,7 @@ SPDX-License-Identifier: MPL-2.0
 				x: 40,
 				y: 40,
 				radius: 50,
-				fill: '#ff000d'
+				fill: '#5db5df'
 			});
 		} else if (selected_element === ElementTypes.Rectangle) {
 			canvas.shapes.rect.insert({
@@ -88,7 +87,7 @@ SPDX-License-Identifier: MPL-2.0
 				y: 40,
 				width: 50,
 				height: 50,
-				fill: '#ff000d'
+				fill: '#5db5df'
 			});
 		}
 	};
@@ -173,78 +172,104 @@ SPDX-License-Identifier: MPL-2.0
 	});
 </script>
 
-<div class="flex h-full relative w-full" bind:this={main_el}>
-	<div class="absolute top-0 left-0 grid grid-cols-6 w-full">
-		<div class="flex flex-col pl-2 rounded-t-lg z-40 pt-2">
+<div class="relative flex h-full w-full flex-col" bind:this={main_el}>
+	<div class="toolbar relative z-40 mx-4 mb-3 grid grid-cols-[auto_1fr_auto] items-start gap-3">
+		<div class="relative">
 			<button
-				class="mr-auto"
+				class="tbtn"
+				class:tbtn-on={settings_menu_open}
 				onclick={() => {
 					settings_menu_open = !settings_menu_open;
 				}}
 				type="button"
+				aria-expanded={settings_menu_open}
 			>
-				<svg
-					class="w-6 h-6"
-					stroke-width="2"
-					viewBox="0 0 24 24"
-					fill="none"
-					xmlns="http://www.w3.org/2000/svg"
-					color="currentColor"
-				>
-					<path
-						d="M12 15a3 3 0 100-6 3 3 0 000 6z"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
+				<svg class="h-5 w-5" stroke-width="2" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+					<path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
 					<path
 						d="M19.622 10.395l-1.097-2.65L20 6l-2-2-1.735 1.483-2.707-1.113L12.935 2h-1.954l-.632 2.401-2.645 1.115L6 4 4 6l1.453 1.789-1.08 2.657L2 11v2l2.401.655L5.516 16.3 4 18l2 2 1.791-1.46 2.606 1.072L11 22h2l.604-2.387 2.651-1.098C16.697 18.831 18 20 18 20l2-2-1.484-1.75 1.098-2.652 2.386-.62V11l-2.378-.605z"
 						stroke="currentColor"
-						stroke-width="2"
 						stroke-linecap="round"
 						stroke-linejoin="round"
 					/>
 				</svg>
+				<span>Slide settings</span>
 			</button>
 			{#if settings_menu_open}
-				<SettingsMenu bind:time={data.time} bind:title={data.question} />
+				<div class="absolute top-full left-0 mt-2">
+					<SettingsMenu bind:time={data.time} bind:title={data.question} />
+				</div>
 			{/if}
 		</div>
-		<div class="col-start-2 col-end-6 transition bg-transparent pt-2">
-			<EditMenu bind:selected_el />
+		<div class="flex justify-center">
+			<EditMenu {selected_el} />
 		</div>
-
-		<div class="flex flex-col pr-2 rounded-t-lg z-40 pt-2">
+		<div class="relative">
 			<button
-				class="ml-auto"
+				class="tbtn tbtn-primary"
 				onclick={() => {
 					selected_element = selected_element === null ? undefined : null;
 				}}
 				type="button"
-				class:add-button={selected_element === null}
+				aria-expanded={selected_element === null}
 			>
-				<svg
-					class="w-6 h-6"
-					stroke-width="2"
-					viewBox="0 0 24 24"
-					fill="none"
-					xmlns="http://www.w3.org/2000/svg"
-					color="currentColor"
-				>
-					<path
-						d="M9 12h3m3 0h-3m0 0V9m0 3v3M21 3.6v16.8a.6.6 0 01-.6.6H3.6a.6.6 0 01-.6-.6V3.6a.6.6 0 01.6-.6h16.8a.6.6 0 01.6.6z"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
+				<svg class="h-5 w-5" stroke-width="2.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+					<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-linecap="round" />
 				</svg>
+				<span>Add element</span>
 			</button>
 			{#if selected_element === null}
-				<ElementSelection bind:selected_element />
+				<div class="absolute top-full right-0 mt-2">
+					<ElementSelection bind:selected_element />
+				</div>
 			{/if}
 		</div>
 	</div>
-	<div bind:this={canvas_el} class="w-full h-full block"></div>
+	<div class="surface mx-4 mb-4 min-h-0 flex-1">
+		<div bind:this={canvas_el} class="block h-full w-full"></div>
+	</div>
 </div>
+
+<style>
+	.tbtn {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		height: 40px;
+		padding: 0 16px;
+		border-radius: 999px;
+		background: var(--fill-glass);
+		color: var(--ink);
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 2px;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+	.tbtn:hover,
+	.tbtn-on {
+		background: var(--fill-glass-strong);
+	}
+	.tbtn-primary {
+		background: linear-gradient(90deg, var(--accent-sky) 0%, var(--accent-green) 100%);
+		color: var(--ink-dark);
+	}
+	.tbtn-primary:hover {
+		background: linear-gradient(90deg, var(--accent-sky) 0%, var(--accent-green) 100%);
+		filter: brightness(1.08);
+	}
+	.tbtn:focus-visible {
+		outline: 3px solid var(--accent-sky-tint);
+		outline-offset: 2px;
+	}
+	/* the slide itself: the dark ground it is shown on in the game */
+	.surface {
+		border-radius: 18px;
+		overflow: hidden;
+		background-color: #170d43;
+		background-image:
+			linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+			linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+		background-size: 40px 40px;
+	}
+</style>

@@ -5,15 +5,12 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
-	import { getLocalization } from '$lib/i18n';
 	import type { EditorData, OrderQuizAnswer } from '$lib/quiz_types';
 	import { fade } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
-	import { get_foreground_color } from '$lib/helpers.ts';
-
-	const { t } = getLocalization();
+	import ShapeMark from '$lib/brand/ShapeMark.svelte';
+	import { answerStyle } from '$lib/brand/answers';
+	import EdIcon from '$lib/editor/EdIcon.svelte';
 
 	interface Props {
 		selected_question: number;
@@ -22,184 +19,172 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { selected_question, data = $bindable() }: Props = $props();
 
-	let parent_el: HTMLDivElement = $state();
-
-	const swapArrayElements = (arr: OrderQuizAnswer[], a: number, b: number): Array<any> => {
-		let _arr = [...arr];
-		let temp = _arr[a];
-		_arr[a] = _arr[b];
-		_arr[b] = temp;
-		return _arr;
-	};
-
-	const move_item = (up: boolean, index: number) => {
-		if (up) {
-			data.questions[selected_question].answers = swapArrayElements(
-				data.questions[selected_question].answers,
-				index,
-				index - 1
-			);
-		} else {
-			data.questions[selected_question].answers = swapArrayElements(
-				data.questions[selected_question].answers,
-				index,
-				index + 1
-			);
-		}
-	};
-
 	if (!Array.isArray(data.questions[selected_question].answers)) {
 		data.questions[selected_question].answers = [];
 	}
-	for (let i = 0; i < data.questions[selected_question].answers.length; i++) {
-		data.questions[selected_question].answers[i] = {
-			answer: data.questions[selected_question].answers[i].answer,
-			color: data.questions[selected_question].answers[i].color ?? undefined,
-			id: [i]
-		};
-	}
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
-	const set_colors_if_unset = () => {
-		for (let i = 0; i < data.questions[selected_question].answers.length; i++) {
-			if (!data.questions[selected_question].answers[i].color) {
-				data.questions[selected_question].answers[i].color = default_colors[i];
-			}
-		}
+	// give every item a stable numeric id for the animated list
+	data.questions[selected_question].answers = (
+		data.questions[selected_question].answers as OrderQuizAnswer[]
+	).map((a, i) => ({
+		answer: a.answer ?? '',
+		color: a.color ?? undefined,
+		id: i
+	}));
+
+	const answers = $derived(data.questions[selected_question].answers as OrderQuizAnswer[]);
+
+	const move_item = (index: number, to: number) => {
+		if (to < 0 || to >= answers.length) return;
+		const arr = [...answers];
+		[arr[index], arr[to]] = [arr[to], arr[index]];
+		data.questions[selected_question].answers = arr;
 	};
-	run(() => {
-		set_colors_if_unset();
-		data;
-		selected_question;
-	});
+	const remove_item = (index: number) => {
+		const arr = [...answers];
+		arr.splice(index, 1);
+		data.questions[selected_question].answers = arr;
+	};
+	const add_item = () => {
+		const next_id = answers.reduce((m, a) => Math.max(m, Number(a.id ?? 0)), -1) + 1;
+		data.questions[selected_question].answers = [
+			...answers,
+			{ answer: '', color: undefined, id: next_id }
+		];
+	};
 </script>
 
-<div class="w-full">
-	<div class="flex flex-col w-full px-8" bind:this={parent_el}>
-		{#each data.questions[selected_question].answers as answer, i (answer.id)}
-			<div
-				animate:flip={{ duration: 200 }}
-				out:fade={{ duration: 150 }}
-				class="p-4 rounded-lg flex justify-center w-full transition relative border border-gray-600 flex-row gap-4 m-2"
-			>
-				<button
-					class="rounded-full absolute -top-2 -right-2 opacity-70 hover:opacity-100 transition"
-					type="button"
-					onclick={() => {
-						data.questions[selected_question].answers.splice(i, 1);
-						data.questions[selected_question].answers =
-							data.questions[selected_question].answers;
-					}}
-				>
-					<svg
-						class="w-6 h-6 bg-red-500 rounded-full"
-						fill="none"
-						stroke="currentColor"
-						viewBox="0 0 24 24"
-						xmlns="http://www.w3.org/2000/svg"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-				</button>
-				<div>
-					<button
-						onclick={() => {
-							move_item(true, i);
-						}}
-						class="disabled:opacity-50 transition"
-						type="button"
-						disabled={i === 0}
-					>
-						<svg
-							class="w-8 h-8"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							fill="none"
-							xmlns="http://www.w3.org/2000/svg"
-							color="currentColor"
-						>
-							<path
-								d="M12 22a2 2 0 110-4 2 2 0 010 4zM12 15V2m0 0l3 3m-3-3L9 5"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
-					</button>
-					<button
-						onclick={() => {
-							move_item(false, i);
-						}}
-						class="disabled:opacity-50 transition"
-						type="button"
-						disabled={i === data.questions[selected_question].answers.length - 1}
-					>
-						<svg
-							class="w-8 h-8"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							fill="none"
-							xmlns="http://www.w3.org/2000/svg"
-							color="currentColor"
-						>
-							<path
-								d="M12 6a2 2 0 110-4 2 2 0 010 4zM12 9v13m0 0l3-3m-3 3l-3-3"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
-					</button>
-				</div>
-				<input
-					bind:value={answer.answer}
-					type="text"
-					class="border-b-2 border-dotted w-5/6 text-center rounded-lg bg-transparent outline-hidden"
-					style="background-color: {answer.color}; color: {get_foreground_color(
-						answer.color
-					)}"
-					placeholder={$t('editor.empty')}
-				/>
-				<input
-					class="rounded-lg p-1 border-black border"
-					type="color"
-					bind:value={answer.color}
-					oncontextmenu={(e) => {
-						e.preventDefault();
-						answer.color = null;
-					}}
-				/>
-			</div>
-		{/each}
-	</div>
-
-	<div class="px-8 flex w-full">
-		{#if data.questions[selected_question].answers.length < 4}
-			<button
-				class="p-4 rounded-lg bg-transparent border-gray-500 border-2 hover:bg-gray-300 transition dark:hover:bg-gray-600 m-2 w-full"
-				type="button"
-				in:fade={{ duration: 150 }}
-				onclick={() => {
-					data.questions[selected_question].answers = [
-						...data.questions[selected_question].answers,
-						{
-							...{
-								answer: '',
-								color: undefined,
-								id: data.questions[selected_question].answers.length
-							}
-						}
-					];
-				}}
-			>
-				<span class="italic text-center">{$t('editor_page.add_an_answer')}</span>
-			</button>
-		{/if}
-	</div>
+<div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+	<span class="bt-eyebrow text-[11px] text-ink-muted">Correct order</span>
+	<span class="text-xs text-ink-muted">
+		Write the items from first to last. Players get them shuffled.
+	</span>
 </div>
+
+<div class="flex flex-col gap-2">
+	{#each answers as answer, i (answer.id)}
+		<div
+			class="item {answerStyle(i).className}"
+			animate:flip={{ duration: 180 }}
+			out:fade={{ duration: 120 }}
+		>
+			<span class="pos bt-num">{i + 1}</span>
+			<span class="bt-tile-mark mark"><ShapeMark index={i} size={16} /></span>
+			<input
+				bind:value={answer.answer}
+				type="text"
+				class="item-input"
+				placeholder="Item {i + 1}"
+				aria-label="Item {i + 1}"
+				maxlength="200"
+			/>
+			<span class="flex gap-1">
+				<button
+					type="button"
+					class="tool"
+					aria-label="Move up"
+					title="Move up"
+					disabled={i === 0}
+					onclick={() => move_item(i, i - 1)}><EdIcon name="up" size={16} /></button
+				>
+				<button
+					type="button"
+					class="tool"
+					aria-label="Move down"
+					title="Move down"
+					disabled={i === answers.length - 1}
+					onclick={() => move_item(i, i + 1)}><EdIcon name="down" size={16} /></button
+				>
+				<button
+					type="button"
+					class="tool"
+					aria-label="Remove item {i + 1}"
+					title="Remove"
+					disabled={answers.length <= 1}
+					onclick={() => remove_item(i)}><EdIcon name="x" size={16} /></button
+				>
+			</span>
+		</div>
+	{/each}
+</div>
+{#if answers.length < 4}
+	<button class="add mt-3" type="button" onclick={add_item}>
+		<EdIcon name="plus" size={18} stroke={2.5} /> Add an item
+	</button>
+{/if}
+
+<style>
+	.item {
+		min-height: 64px;
+		padding: 8px 10px 8px 16px;
+		gap: 12px;
+		border-radius: 20px;
+		text-transform: none;
+	}
+	.pos {
+		width: 22px;
+		font-size: 22px;
+		text-align: center;
+	}
+	.mark {
+		width: 36px;
+		height: 36px;
+		border-radius: 10px;
+	}
+	.item-input {
+		flex: 1;
+		min-width: 0;
+		align-self: stretch;
+		border: 0;
+		border-bottom: 2px solid transparent;
+		background: transparent;
+		color: inherit;
+		font-family: var(--bt-font);
+		font-weight: 800;
+		font-size: 18px;
+		outline: none;
+	}
+	.item-input::placeholder {
+		color: currentColor;
+		opacity: 0.55;
+	}
+	.item-input:focus {
+		border-bottom-color: currentColor;
+	}
+	.tool {
+		display: grid;
+		place-items: center;
+		width: 34px;
+		height: 34px;
+		border-radius: 999px;
+		background: var(--fill-deep);
+		color: var(--ink);
+	}
+	.tool:hover:not(:disabled) {
+		background: rgba(10, 5, 31, 0.9);
+	}
+	.tool:disabled {
+		opacity: 0.35;
+		cursor: not-allowed;
+	}
+	.add {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		height: 40px;
+		padding: 0 18px;
+		border-radius: 999px;
+		background: var(--fill-glass);
+		font-size: 13px;
+		font-weight: 700;
+		letter-spacing: 2px;
+		text-transform: uppercase;
+	}
+	.add:hover {
+		background: var(--fill-glass-strong);
+	}
+	.tool:focus-visible,
+	.add:focus-visible {
+		outline: 3px solid var(--accent-sky-tint);
+		outline-offset: 2px;
+	}
+</style>

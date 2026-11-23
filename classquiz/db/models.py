@@ -180,11 +180,23 @@ class QuizQuestionType(str, Enum):
     TEXT = "TEXT"
     ORDER = "ORDER"
     CHECK = "CHECK"
+    # Players type a short free text; the host sees a live word cloud. No
+    # points, no streak change. Stored in the quiz's questions JSON, so no
+    # migration is needed (the type is not a Postgres enum).
+    WORD_CLOUD = "WORD_CLOUD"
 
 
 class TextQuizAnswer(BaseModel):
     answer: str
     case_sensitive: bool
+
+
+class QuestionPoints(str, Enum):
+    """How many points a question awards: standard (1000), double (2000) or none (0)."""
+
+    STANDARD = "standard"
+    DOUBLE = "double"
+    NONE = "none"
 
 
 class QuizQuestion(BaseModel):
@@ -194,6 +206,30 @@ class QuizQuestion(BaseModel):
     answers: list[ABCDQuizAnswer] | RangeQuizAnswer | list[TextQuizAnswer] | list[VotingQuizAnswer] | str
     image: str | None = None
     hide_results: bool | None = False
+    # Stored inside the quiz's questions JSON column: optional with a default,
+    # so quizzes saved before this field existed load unchanged (no migration).
+    points: QuestionPoints = QuestionPoints.STANDARD
+
+    @field_validator("points", mode="before")
+    @classmethod
+    def points_default_if_missing(cls, v: object) -> object:
+        # null, "" or an unknown value from an old/hand-edited quiz -> standard
+        if v is None or v == "":
+            return QuestionPoints.STANDARD
+        if isinstance(v, str) and v.lower() in {p.value for p in QuestionPoints}:
+            return v.lower()
+        if isinstance(v, QuestionPoints):
+            return v
+        return QuestionPoints.STANDARD
+
+    @field_validator("answers", mode="before")
+    @classmethod
+    def word_cloud_has_no_answers(cls, v: object, info: ValidationInfo) -> object:
+        # A word cloud has no predefined answers: whatever the editor sends
+        # (null, "" or a list) is stored as an empty list.
+        if info.data.get("type") == QuizQuestionType.WORD_CLOUD:
+            return []
+        return v
 
     @field_validator("answers")
     def answers_not_none_if_abcd_type(cls, v, info: ValidationInfo):
@@ -300,6 +336,9 @@ class PlayGame(BaseModel):
     background_image: str | None = None
     custom_field: str | None = None
     question_show: bool = False
+    # Seconds of the "get ready" screen before each question's answer window
+    # opens (0 disables it). Set by the host with `start_game`.
+    get_ready_seconds: int = 3
 
     # This is what the host and player screens put into style="...": quizzes
     # stored before colours were validated are cleaned here too.
@@ -382,7 +421,10 @@ class AnswerData(BaseModel):
     answer: str
     right: bool
     time_taken: float  # In milliseconds
-    score: int
+    score: int  # Points gained on this question, streak bonus included
+    # Added for the live leaderboard; defaults keep stored results loading.
+    streak: int = 0  # Answer streak after this answer
+    streak_bonus: int = 0  # Part of `score` that comes from the streak
 
 
 class AnswerDataList(RootModel):

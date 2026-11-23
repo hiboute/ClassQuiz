@@ -4,6 +4,45 @@ SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
 SPDX-License-Identifier: MPL-2.0
 -->
 
+# India Tech Hub Live Quiz
+
+India Tech Hub Live Quiz is the live quiz used at L'Oréal Beauty Tech India Tech Hub
+events: the host runs the quiz on a big screen and up to 400 people in the room
+answer from their phones. It is a fork of [ClassQuiz](https://github.com/mawoka-myblock/classquiz)
+by Mawoka; this fork lives at [github.com/hiboute/classquiz](https://github.com/hiboute/classquiz).
+
+### What this fork changes
+
+- **Restyle.** A dark, event-ready interface in the Beauty Tech identity: colour
+  worlds per question, glass cards, large tabular numbers, the four answer
+  shapes, and the India Tech Hub logo lockup. The ClassQuiz marketing pages,
+  donation links and the Kahoot importer are removed.
+- **400 players in one game.** Socket.IO broadcasts go through Redis so every
+  gunicorn worker reaches every phone, events are scoped to rooms (host,
+  players, whole game), phones receive only their own results, and the server
+  computes the ranks.
+- **Live competition mechanics.** Speed-based scoring, answer streaks, a
+  "get ready" countdown before each question, live answer counts, a
+  leaderboard between questions and a final podium, late join, game lock,
+  pause and resume, and nickname rules (validation, bans, random nicknames).
+  Only the game mechanics are inspired by other live quiz products; no third
+  party branding, names, artwork or sounds are used.
+
+The socket events added or changed by the fork are listed in
+[`SOCKET-CONTRACT-CHANGES.md`](SOCKET-CONTRACT-CHANGES.md).
+
+### Licence and credit
+
+The code is ClassQuiz, copyright Marlon W (Mawoka) and contributors, with changes
+by this fork, and it stays under the [Mozilla Public License 2.0](LICENSES/MPL-2.0.txt).
+The L'Oréal brand assets in `frontend/static/brand` and `frontend/static/fonts`
+are used with permission and are not covered by the MPL-2.0
+(see [`LICENSES/LicenseRef-LOreal-Brand-Assets.txt`](LICENSES/LicenseRef-LOreal-Brand-Assets.txt)).
+
+The original ClassQuiz README follows.
+
+---
+
 <a href="https://github.com/mawoka-myblock/ClassQuiz/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/mawoka-myblock/classquiz?style=for-the-badge"></a>
 <a href="https://github.com/mawoka-myblock/ClassQuiz/graphs/contributors"><img alt="GitHub contributors" src="https://img.shields.io/github/contributors/mawoka-myblock/classquiz?color=green&style=for-the-badge"></a>
 <a href="https://github.com/mawoka-myblock/ClassQuiz/network/members"><img alt="GitHub forks" src="https://img.shields.io/github/forks/mawoka-myblock/classquiz?style=for-the-badge"></a>
