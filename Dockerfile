@@ -53,6 +53,9 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 COPY *start.sh /app/
 RUN chmod +x start.sh
+# Local storage (STORAGE_PATH=/app/data): a fresh named volume takes this
+# directory's owner, so uploads work as nonroot.
+RUN mkdir -p /app/data && chown nonroot:nonroot /app/data
 USER nonroot
 
 
