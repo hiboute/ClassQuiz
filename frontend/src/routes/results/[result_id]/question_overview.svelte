@@ -19,7 +19,7 @@ SPDX-License-Identifier: MPL-2.0
 			username: string;
 			answer: string;
 			right: boolean;
-			tike_taken: number;
+			time_taken: number;
 			score: number;
 		}[][];
 	}
@@ -27,7 +27,8 @@ SPDX-License-Identifier: MPL-2.0
 	let { questions, answers }: Props = $props();
 
 	const get_average_score = (q_index: number): number => {
-		const q_answers = answers[q_index];
+		const q_answers = answers[q_index] ?? [];
+		if (q_answers.length === 0) return 0;
 		let summed_up_scores = 0;
 		for (const answer of q_answers) {
 			summed_up_scores = summed_up_scores + answer.score;
@@ -36,7 +37,7 @@ SPDX-License-Identifier: MPL-2.0
 	};
 
 	const get_number_of_correct_answers = (q_index: number): number => {
-		const q_answers = answers[q_index];
+		const q_answers = answers[q_index] ?? [];
 		let correct_answer = 0;
 		for (const answer of q_answers) {
 			if (answer.right) {
@@ -56,39 +57,45 @@ SPDX-License-Identifier: MPL-2.0
 	let question_open: number | boolean = $state(false);
 </script>
 
-<div class="w-full flex justify-center">
-	<div class="flex flex-col w-full gap-4">
-		{#each questions as question, i}
-			<div class="transition-all">
-				<div
-					class="w-full bg-white/60 p-2 rounded-sm grid grid-cols-3 z-40 dark:bg-gray-700/80"
+<div class="flex flex-col gap-3">
+	{#each questions as question, i}
+		<div class="bt-glass bt-glass-faint overflow-hidden">
+			<button
+				type="button"
+				class="w-full flex flex-col sm:flex-row sm:items-center gap-3 p-5 sm:px-7 text-start hover:bg-white/[0.05] transition-colors"
+				aria-expanded={question_open === i}
+				onclick={() => toggle_dropdown(i)}
+			>
+				<span class="bt-num text-2xl text-ink-muted w-10 shrink-0">{i + 1}</span>
+				<span class="flex-1 min-w-0 font-bold text-lg leading-snug break-words"
+					>{@html question.question}</span
 				>
-					<button
-						class="text-center underline text-xl"
-						onclick={() => {
-							toggle_dropdown(i);
-						}}>{@html question.question}</button
-					>
-					{#if question.type !== QuizQuestionType.VOTING}
-						{@const correct_answers = get_number_of_correct_answers(i)}
-						<p class="text-center text-sm my-auto">
-							{$t('result_page.average_score', {
+				{#if question.type !== QuizQuestionType.VOTING && answers[i]?.length}
+					{@const correct_answers = get_number_of_correct_answers(i)}
+					<span class="flex gap-5 text-sm text-ink-muted shrink-0">
+						<span
+							>{$t('result_page.average_score', {
 								average_score: get_average_score(i).toFixed(0)
-							})}
-						</p>
-						<p class="text-center text-sm my-auto">
-							{$t('result_page.correct_answer', { count: correct_answers })}
-							<!--							{correct_answers} correct
-							{#if correct_answers === 1}Answer{:else}Answers{/if}-->
-						</p>
-					{/if}
-				</div>
-				{#if question_open === i}
-					<div in:fly={{ y: -10 }}>
-						<QuestionTab {question} answers={answers[i]} />
-					</div>
+							})}</span
+						>
+						<span>{$t('result_page.correct_answer', { count: correct_answers })}</span>
+					</span>
 				{/if}
-			</div>
-		{/each}
-	</div>
+				<svg
+					class="h-5 w-5 shrink-0 transition-transform hidden sm:block"
+					class:rotate-180={question_open === i}
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.4"
+					aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" /></svg
+				>
+			</button>
+			{#if question_open === i}
+				<div in:fly={{ y: -10 }} class="px-5 pb-6 sm:px-7">
+					<QuestionTab {question} answers={answers[i] ?? []} />
+				</div>
+			{/if}
+		</div>
+	{/each}
 </div>

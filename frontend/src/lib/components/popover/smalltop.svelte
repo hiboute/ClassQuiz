@@ -22,14 +22,14 @@ SPDX-License-Identifier: MPL-2.0
 
 {#if open}
 	<div
-		class="fixed w-screen top-10 z-[60] flex justify-center"
+		class="fixed inset-x-0 top-20 z-[60] flex justify-center px-4 pointer-events-none"
 		transition:fly|global={{ y: -100 }}
 	>
 		<div
-			class="flex items-center p-4 w-full max-w-xs text-gray-500 bg-white rounded-lg shadow-smdark:text-gray-400 dark:bg-gray-800"
+			class="pointer-events-auto flex items-center gap-3 py-3 ps-5 pe-3 w-full max-w-sm text-ink bg-[#1a1440]/90 backdrop-blur-xl rounded-[18px] shadow-2xl"
 			role="alert"
 		>
-			<div class="ml-3 text-sm font-normal">
+			<div class="text-sm font-normal">
 				{#if type === PopoverTypes.Copy}
 					{$t('components.popover.copied_to_clipboard')}
 				{:else if type === PopoverTypes.GameInLobby}A game is currently in the lobby. Click <a
@@ -39,12 +39,12 @@ SPDX-License-Identifier: MPL-2.0
 				{:else if type === PopoverTypes.Generic}
 					{@html data}
 				{:else}
-					<p>Error!!!</p>
+					<p>Something went wrong.</p>
 				{/if}
 			</div>
 			<button
 				type="button"
-				class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
+				class="ms-auto shrink-0 text-ink-muted hover:text-ink rounded-full p-1.5 hover:bg-white/10 inline-flex h-8 w-8"
 				data-dismiss-target="#toast-default"
 				aria-label="Close"
 				onclick={() => {

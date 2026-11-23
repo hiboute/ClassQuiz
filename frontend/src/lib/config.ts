@@ -8,7 +8,9 @@ export const github_auth_enabled = import.meta.env.VITE_GITHUB_AUTH_ENABLED;
 // Captcha is off unless VITE_CAPTCHA_ENABLED is exactly "true" (the string "false" is truthy).
 export const captcha_enabled = import.meta.env.VITE_CAPTCHA_ENABLED === 'true';
 export const custom_oauth_name = import.meta.env.VITE_CUSTOM_OAUTH_NAME;
-export const registration_disabled = import.meta.env.VITE_REGISTRATION_DISABLED;
+// Sign-up is off when VITE_REGISTRATION_DISABLED is set to anything but empty or "false".
+export const registration_disabled =
+	!!import.meta.env.VITE_REGISTRATION_DISABLED && import.meta.env.VITE_REGISTRATION_DISABLED !== 'false';
 export const hcaptcha_site_key = captcha_enabled ? import.meta.env.VITE_HCAPTCHA : undefined;
 export const sentry_dsn = import.meta.env.VITE_SENTRY;
 export const recaptcha_key = captcha_enabled ? import.meta.env.VITE_RECAPTCHA : undefined;

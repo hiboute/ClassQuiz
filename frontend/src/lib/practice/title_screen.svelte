@@ -18,31 +18,18 @@ SPDX-License-Identifier: MPL-2.0
 	in:fly|global={{ x: 100 }}
 	out:fly|global={{ x: -100 }}
 >
-	<div class="rounded-lg bg-white w-full h-full border-gray-500 dark:bg-gray-700">
-		<div class="h-fit bg-gray-300 rounded-t-lg dark:bg-gray-500">
-			<div class="flex align-middle p-4 gap-3">
-				<span
-					class="inline-block bg-gray-600 w-4 h-4 rounded-full hover:bg-red-400 transition"
-				></span>
-				<span
-					class="inline-block bg-gray-600 w-4 h-4 rounded-full hover:bg-yellow-400 transition"
-				></span>
-				<span
-					class="inline-block bg-gray-600 w-4 h-4 rounded-full hover:bg-green-400 transition"
-				></span>
-			</div>
-		</div>
-		<div class="dark:bg-gray-700">
+	<div class="bt-glass bt-glass-faint w-full h-full overflow-auto pb-8">
+		<div>
 			<div class="flex justify-center pt-10 w-full">
 				<p
-					class="p-3 rounded-lg border-gray-500 border text-center w-11/12 lg:w-1/3 text-lg font-semibold dark:bg-gray-500"
+					class="p-3 text-center w-11/12 lg:w-2/3 bt-headline text-[28px] lg:text-[44px]"
 				>
 					{@html data.title}
 				</p>
 			</div>
 			<div class="flex justify-center pt-10 w-full max-h-32">
 				<p
-					class="p-3 rounded-lg border-gray-500 border text-center w-11/12 lg:w-1/3 h-20 resize-none dark:bg-gray-500"
+					class="p-3 text-center w-11/12 lg:w-1/2 text-ink-muted"
 				>
 					{@html data.description}
 				</p>
@@ -53,7 +40,7 @@ SPDX-License-Identifier: MPL-2.0
 					<img
 						src="/api/v1/storage/download/{data.cover_image}"
 						alt="not available"
-						class="max-h-72 h-auto w-auto"
+						class="max-h-72 h-auto w-auto rounded-[18px]"
 						oncontextmenu={(e) => {
 							e.preventDefault();
 							data.cover_image = '';

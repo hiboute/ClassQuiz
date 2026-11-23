@@ -5,92 +5,43 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { QuizData } from '$lib/quiz_types';
-	import { onMount } from 'svelte';
-	import { fade } from 'svelte/transition';
 	import { getLocalization } from '$lib/i18n';
+	import Modal from '$lib/components/organiser/Modal.svelte';
 
 	const { t } = getLocalization();
 
-	export let quiz: QuizData | undefined = undefined;
+	interface Props {
+		quiz?: { title?: string; views?: number; plays?: number; likes?: number; dislikes?: number };
+	}
 
-	const on_parent_click = (e: Event) => {
-		if (e.target !== e.currentTarget) {
-			return;
-		}
-		quiz = undefined;
-	};
-	const close_start_game_if_esc_is_pressed = (key: KeyboardEvent) => {
-		if (key.code === 'Escape') {
-			quiz = undefined;
-		}
-	};
-	onMount(() => {
-		document.body.addEventListener('keydown', close_start_game_if_esc_is_pressed);
-	});
+	let { quiz = $bindable(undefined) }: Props = $props();
+
+	const stats = $derived(
+		quiz
+			? [
+					{ label: $t('words.view', { count: 2 }), value: quiz.views ?? 0 },
+					{ label: 'Games', value: quiz.plays ?? 0 },
+					{ label: $t('words.like', { count: 2 }), value: quiz.likes ?? 0 },
+					{ label: $t('words.dislike', { count: 2 }), value: quiz.dislikes ?? 0 }
+				]
+			: []
+	);
 </script>
 
 {#if quiz}
-	<div
-		class="fixed w-full h-full top-0 flex bg-black/50 z-50 overflow-scroll"
-		onclick={on_parent_click}
-		transition:fade={{ duration: 100 }}
-	>
-		<div
-			class="m-auto bg-white dark:bg-gray-600 rounded-sm shadow-2xl flex p-4 flex-col lg:w-2/3 w-11/12 h-5/6"
-		>
-			<h1 class="text-center text-5xl">{$t('words.analytics')}</h1>
-			<section class="flex flex-col gap-2 mt-8">
-				<h2 class="mx-auto text-2xl">{$t('words.rating')}</h2>
-				<table class="w-fit mx-auto">
-					<tbody>
-						<tr class="border-b-2 dark:border-gray-500 text-left border-gray-300">
-							<th class="border-r dark:border-gray-500 p-1 mx-auto border-gray-300"
-								>{$t('words.like', { count: 2 })}</th
-							>
-							<th class="p-1 mx-auto">{$t('words.dislike', { count: 2 })}</th>
-						</tr>
-						<tr class="text-left">
-							<td class="border-r dark:border-gray-500 p-1 border-gray-300"
-								>{quiz.likes}</td
-							>
-							<td class="mx-auto p-1">{quiz.dislikes}</td>
-						</tr>
-					</tbody>
-				</table>
-			</section>
-			<section class="flex flex-col gap-2 mt-8">
-				<h2 class="mx-auto text-2xl">{$t('dashboard.views_n_plays')}</h2>
-				<table class="w-fit mx-auto">
-					<thead>
-						<tr class="border-b-2 dark:border-gray-500 text-left border-gray-300">
-							<th class="border-r dark:border-gray-500 p-1 mx-auto border-gray-300"
-								>{$t('words.view', { count: 2 })}</th
-							>
-							<th class="p-1 mx-auto">{$t('words.play', { count: 2 })}</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr class="text-left">
-							<td class="border-r dark:border-gray-500 p-1 border-gray-300"
-								>{quiz.views}</td
-							>
-							<td class="mx-auto p-1">{quiz.plays}</td>
-						</tr>
-					</tbody>
-				</table>
-			</section>
-			<section class="flex flex-col gap-2 mt-8">
-				<h2 class="mx-auto text-2xl">{$t('words.info')}</h2>
-				<p class="mx-auto max-w-[70%] text-center">
-					{$t('dashboard.info_analytics')}
-				</p>
-			</section>
-			<section class="mt-auto">
-				<p class="mt-6 mx-auto max-w-[70%] text-sm dark:text-gray-200 text-center">
-					Thank you for hosting with India Tech Hub Live Quiz.
-				</p>
-			</section>
+	<Modal label={$t('words.analytics')} world="midnight" onclose={() => (quiz = undefined)}>
+		<div class="px-6 py-8 sm:p-10">
+			<span class="bt-eyebrow text-ink-muted mb-3">{$t('words.analytics')}</span>
+			<h2 class="bt-headline text-[26px] sm:text-[34px] break-words pe-10">{@html quiz.title}</h2>
+			<dl class="mt-8 grid grid-cols-2 gap-3">
+				{#each stats as s}
+					<div class="bt-glass bt-glass-faint p-5">
+						<dt class="bt-eyebrow !text-[11px] !tracking-[3px] text-ink-muted">{s.label}</dt>
+						<dd class="bt-num text-[44px] mt-3">{s.value}</dd>
+					</div>
+				{/each}
+			</dl>
+			<p class="mt-6 text-sm text-ink-muted">{$t('dashboard.info_analytics')}</p>
 		</div>
-	</div>
+	</Modal>
 {/if}

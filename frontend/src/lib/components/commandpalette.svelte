@@ -48,10 +48,9 @@ This should be okay, right?
 		{
 			id: 2,
 			title: 'Import a Quiz',
-			description: 'Opens the import page',
+			description: 'Upload a .cqa or .xlsx quiz file',
 			command: 'import',
-			args: ['url'],
-			action: (args) => window.location.assign(`/import?url=${args?.[0] ?? ''}`)
+			action: () => window.location.assign('/import')
 		},
 		{
 			id: 3,
@@ -226,7 +225,7 @@ This should be okay, right?
 
 {#if open}
 	<div
-		class="fixed top-0 left-0 w-screen h-screen flex bg-black/50 z-50"
+		class="fixed top-0 left-0 w-screen h-screen flex bg-[#05040f]/70 backdrop-blur-sm z-50 p-4"
 		onclick={close_on_outside}
 		onkeyup={close_on_outside}
 		role="button"
@@ -234,16 +233,16 @@ This should be okay, right?
 		tabindex="0"
 		transition:fade|global={{ duration: 60 }}
 	>
-		<div class="m-auto w-1/3 h-2/3 rounded-sm bg-black flex flex-col">
-			<div class="grid grid-cols-1 grid-rows-1 border-b border-b-white">
+		<div class="m-auto w-full max-w-xl h-2/3 rounded-[25px] bg-[#1a1440] flex flex-col overflow-hidden shadow-2xl">
+			<div class="grid grid-cols-1 grid-rows-1 border-b border-b-white/10">
 				<p
-					class="col-start-1 row-start-1 w-full p-4 outline-hidden bg-gray-700 rounded-t text-gray-400"
+					class="col-start-1 row-start-1 w-full p-4 outline-hidden bg-transparent text-ink-muted"
 				>
 					{bg_text}
 				</p>
 				<input
 					type="text"
-					class="col-start-1 row-start-1 w-full p-4 outline-hidden bg-gray-700 rounded-sm"
+					class="col-start-1 row-start-1 w-full p-4 outline-hidden bg-transparent"
 					bind:value={input}
 					oninput={() => search(input)}
 					autofocus
@@ -253,9 +252,7 @@ This should be okay, right?
 				{#each visible_items as vi, i}
 					<div
 						transition:fade={{ duration: 60 }}
-						class="p-2 transition rounded-sm"
-						class:bg-[#B07156]={selected === i}
-						class:bg-gray-700={selected !== i}
+						class="p-3 transition rounded-[14px] {selected === i ? 'bg-white/20' : 'bg-white/5'}"
 						onmouseenter={() => (selected = i)}
 						onmousedown={execute_action}
 						tabindex="-2"
@@ -263,11 +260,11 @@ This should be okay, right?
 					>
 						<div class="flex">
 							<h3 class="text-lg my-auto">{vi.title}</h3>
-							<p class="font-mono my-auto ml-auto h-fit bg-black/50 rounded-sm p-0.5">
+							<p class="font-mono my-auto ms-auto h-fit bg-black/40 rounded-md px-1.5 py-0.5 text-sm">
 								/{vi.command}
 								{#if vi.args}
 									{#each vi.args as arg}
-										&lbrace;<span class="text-indigo-400">{arg}</span
+										&lbrace;<span class="text-[var(--accent-sky-tint)]">{arg}</span
 										>&rbrace;{/each}
 								{/if}
 							</p>

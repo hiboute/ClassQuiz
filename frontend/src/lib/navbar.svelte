@@ -44,7 +44,7 @@ SPDX-License-Identifier: MPL-2.0
 			{#if $signedIn}
 				<a class="btn-nav" href="/api/v1/users/logout">{$t('words.logout')}</a>
 			{:else}
-				{#if registration_disabled}
+				{#if !registration_disabled}
 					<a class="btn-nav" href="/account/register">{$t('words.register')}</a>
 				{/if}
 
@@ -126,7 +126,7 @@ SPDX-License-Identifier: MPL-2.0
 				<a class="btn-nav" href="/dashboard">{$t('words.dashboard')}</a>
 				<a class="btn-nav" href="/api/v1/users/logout">{$t('words.logout')}</a>
 			{:else}
-				{#if registration_disabled}
+				{#if !registration_disabled}
 					<a class="btn-nav" href="/account/register">{$t('words.register')}</a>
 				{/if}
 				<a class="btn-nav" href="/account/login?returnTo={$pathname}">{$t('words.login')}</a>

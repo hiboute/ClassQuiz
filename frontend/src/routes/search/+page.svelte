@@ -7,6 +7,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { getLocalization } from '$lib/i18n';
 	const { t } = getLocalization();
 	import SearchCard from '$lib/search-card.svelte';
+	import PageHeader from '$lib/components/organiser/PageHeader.svelte';
 	import { onMount } from 'svelte';
 	let search_term = $state('');
 	let resp_data = $state(null);
@@ -31,86 +32,60 @@ SPDX-License-Identifier: MPL-2.0
 			url.set('q', search_term);
 			history.pushState(null, null, '?' + url.toString());
 		} else {
-			console.error('Error!', res.status);
+			console.error('Search failed', res.status);
 		}
 	};
 	onMount(() => {
 		const url = new URLSearchParams(window.location.search);
 		search_term = url.get('q') ?? '';
-		submit();
+		if (search_term.length > 2) submit();
 	});
 </script>
 
 <svelte:head>
-	<title>India Tech Hub Live Quiz - Search</title>
+	<title>Search - India Tech Hub Live Quiz</title>
 </svelte:head>
 
-<div>
-	<div class="flex justify-center">
-		<div class="mb-3 xl:w-96">
-			<form
-				class="input-group relative flex items-stretch flex-row w-full mb-4"
-				onsubmit={(e: Event) => {
-					e.preventDefault();
-					submit();
-				}}
+<main class="min-h-[calc(100dvh-4rem)] w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-14 pb-16">
+	<PageHeader eyebrow="Public quizzes" kicker="Find a quiz" headline="Search" />
+	<form
+		class="mt-8 flex gap-3 max-w-2xl"
+		role="search"
+		onsubmit={(e: Event) => {
+			e.preventDefault();
+			submit();
+		}}
+	>
+		<input
+			type="search"
+			class="bt-input flex-1 min-w-0"
+			placeholder={$t('search_page.at_least_3_characters')}
+			aria-label="Search quizzes"
+			bind:value={search_term}
+		/>
+		<button class="bt-btn-primary shrink-0" aria-label="Search" disabled={search_term.length <= 2} type="submit">
+			<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"
+				><circle cx="11" cy="11" r="7" /><path stroke-linecap="round" d="M20 20l-3.5-3.5" /></svg
 			>
-				<input
-					type="search"
-					class="form-control relative flex-auto min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded-sm transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-hidden"
-					placeholder={$t('search_page.at_least_3_characters')}
-					aria-label="Search"
-					aria-describedby="button-addon2"
-					bind:value={search_term}
-				/>
-				<button
-					class="px-6 py-2.5 bg-blue-600 text-white font-medium text-xs leading-tight uppercase rounded-sm shadow-md hover:bg-blue-700 hover:shadow-lg focus:bg-blue-700 focus:shadow-lg focus:outline-hidden focus:ring-0 active:bg-blue-800 active:shadow-lg transition duration-150 ease-in-out flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-					id="button-addon2"
-					aria-label="Search"
-					disabled={search_term.length <= 2}
-					type="submit"
-				>
-					<svg
-						aria-hidden="true"
-						focusable="false"
-						data-prefix="fas"
-						data-icon="search"
-						class="w-4"
-						role="img"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 512 512"
-					>
-						<path
-							fill="currentColor"
-							d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"
-						/>
-					</svg>
-				</button>
-			</form>
-		</div>
-	</div>
-</div>
+			<span class="hidden sm:inline">Search</span>
+		</button>
+	</form>
 
-{#if resp_data}
-	{#if resp_data.hits.length !== 0}
-		<div class="grid lg:grid-cols-3 grid-cols-1">
-			{#each resp_data.hits as quiz}
-				<SearchCard quiz={quiz._formatted} />
-			{/each}
-		</div>
-	{:else}
-		<div class="flex justify-center">
-			<h1 class="text-4xl">{$t('search_page.nothing_here')}</h1>
-		</div>
-		<div class="flex justify-center">
-			<p>
-				Not finding what you are looking for? Search on <a
-					class="underline"
-					href="https://create.kahoot.it/search?query={search_term}&tags=test&filter=filter%3D1"
-					target="_blank">Kahoot!</a
-				>
-				and <a href="/import" class="underline">import</a> it!
-			</p>
-		</div>
+	{#if resp_data}
+		{#if resp_data.hits.length !== 0}
+			<ul class="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+				{#each resp_data.hits as quiz}
+					<li><SearchCard quiz={quiz._formatted} /></li>
+				{/each}
+			</ul>
+		{:else}
+			<section class="bt-glass bt-glass-faint mt-10 p-8 max-w-2xl">
+				<p class="bt-headline text-2xl">No quiz found</p>
+				<p class="mt-3 text-ink-muted">
+					Try another word, or <a href="/import" class="text-ink underline underline-offset-4">import</a>
+					a .cqa or .xlsx quiz file.
+				</p>
+			</section>
+		{/if}
 	{/if}
-{/if}
+</main>

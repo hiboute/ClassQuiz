@@ -7,27 +7,16 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import DownloadQuiz from '$lib/components/DownloadQuiz.svelte';
 	import { getLocalization } from '$lib/i18n';
-	import CollapsSection from '$lib/collapsible.svelte';
-	import { createTippy } from 'svelte-tippy';
-	import ImportedOrNot from '$lib/view_quiz/imported_or_not.svelte';
 	import { QuizQuestionType } from '$lib/quiz_types.js';
 	import StartGamePopup from '$lib/dashboard/start_game.svelte';
-	import { onMount } from 'svelte';
 	import Spinner from '$lib/Spinner.svelte';
-	import GrayButton from '$lib/components/buttons/gray.svelte';
+	import ShapeMark from '$lib/brand/ShapeMark.svelte';
+	import { answerStyle } from '$lib/brand/answers';
 	import MediaComponent from '$lib/editor/MediaComponent.svelte';
 	import RatingComponent from '$lib/view_quiz/RatingComponent.svelte';
 	import { page } from '$app/state';
 	import ModComponent from './ModComponent.svelte';
-	import { get_foreground_color } from '$lib/helpers.ts';
 
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
-
-	const tippy = createTippy({
-		arrow: true,
-		animation: 'perspective-subtle',
-		placement: 'right'
-	});
 
 	let start_game = $state(null);
 	let download_id: string | null = $state(null);
@@ -35,19 +24,10 @@ SPDX-License-Identifier: MPL-2.0
 	const mod_view = Boolean(urlparams.get('mod'));
 	const auto_expand = Boolean(urlparams.get('autoExpand'));
 	const auto_return = Boolean(urlparams.get('autoReturn'));
-	console.log(auto_expand, 'autoexpand');
-	const close_start_game_if_esc_is_pressed = (key: KeyboardEvent) => {
-		if (key.code === 'Escape') {
-			start_game = null;
-		}
-	};
-	onMount(() => {
-		document.body.addEventListener('keydown', close_start_game_if_esc_is_pressed);
-	});
 
 	const { t } = getLocalization();
 	let { data } = $props();
-	let { quiz, logged_in }: { quiz: QuizData; logged_in: boolean } = $state(data);
+	let { quiz, logged_in }: { quiz: any; logged_in: boolean } = $state(data);
 
 	interface Question {
 		time: string;
@@ -69,272 +49,156 @@ SPDX-License-Identifier: MPL-2.0
 		created_at: string;
 		updated_at: string;
 		user_id: string;
-		imported_from_kahoot?: boolean;
 		questions: Question[];
-		kahoot_id?: string;
 		mod_rating?: number;
 	}
 </script>
 
 <svelte:head>
-	<title>India Tech Hub Live Quiz - View {quiz.title}</title>
+	<title>{quiz.title.replace(/<[^>]*>/g, '')} - India Tech Hub Live Quiz</title>
 </svelte:head>
 
-<div>
-	<h1 class="text-4xl text-center">{@html quiz.title}</h1>
-	<div class="text-center">
-		<p>{@html quiz.description}</p>
-	</div>
-	<p class="text-center">
-		{$t('view_quiz_page.made_by')}
-		<a href="/user/{quiz.user_id.id}" class="underline">@{quiz.user_id.username}</a>
-	</p>
-	{#if quiz.cover_image}
-		<div class="flex justify-center align-middle items-center">
-			<div class="h-[15vh] m-auto w-auto my-3">
-				<img
-					class="max-h-full max-w-full block"
-					src="/api/v1/storage/download/{quiz.cover_image}"
-					alt="Not provided"
-				/>
-			</div>
+<main class="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-14 pb-16">
+	<header class="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+		<div class="min-w-0">
+			<span class="bt-eyebrow text-ink-muted mb-4">
+				{quiz.questions.length}
+				{quiz.questions.length === 1 ? 'question' : 'questions'}
+			</span>
+			<h1 class="bt-headline text-[32px] lg:text-[52px] break-words">{@html quiz.title}</h1>
+			{#if quiz.description}
+				<div class="mt-3 text-ink-muted max-w-2xl">{@html quiz.description}</div>
+			{/if}
+			<p class="mt-3 text-sm text-ink-muted">
+				{$t('view_quiz_page.made_by')}
+				<a href="/user/{quiz.user_id.id}" class="text-ink hover:underline underline-offset-4"
+					>@{quiz.user_id.username}</a
+				>
+			</p>
 		</div>
-	{/if}
-	<div class="text-center text-sm pt-1 mb-4">
-		<ImportedOrNot imported={quiz.imported_from_kahoot} />
-	</div>
-	<div class="flex justify-center mb-2 flex-row gap-2">
+		<div class="flex flex-wrap gap-3">
+			<span title={logged_in ? undefined : 'Sign in to start a live game'}>
+				<button
+					type="button"
+					class="bt-btn-primary"
+					disabled={!logged_in}
+					onclick={() => (start_game = quiz.id)}
+				>
+					<svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+						><path d="M7 4.5v15l13-7.5z" /></svg
+					>
+					Start
+				</button>
+			</span>
+			<a href="/practice?quiz_id={quiz.id}" class="bt-btn-ghost">{$t('words.practice')}</a>
+			{#if logged_in}
+				<button type="button" class="bt-btn-ghost" onclick={() => (download_id = quiz.id)}
+					>{$t('words.download')}</button
+				>
+			{/if}
+		</div>
+	</header>
+
+	<div class="mt-8 flex flex-wrap gap-3 items-start">
 		<RatingComponent bind:quiz />
 		{#if mod_view}
 			<ModComponent autoReturn={auto_return} quiz_id={quiz.id} />
 		{/if}
 	</div>
-	<div class="flex flex-col justify-center">
-		<div class="mx-auto flex flex-col gap-2 justify-center w-fit">
-			{#if quiz.imported_from_kahoot && quiz.kahoot_id}
-				<div class="w-full">
-					<GrayButton
-						href="https://create.kahoot.it/details/{quiz.kahoot_id}"
-						target="_blank"
-					>
-						{$t('view_quiz_page.view_on_kahoot')}
-					</GrayButton>
-				</div>
-			{/if}
-			{#if logged_in}
-				<div class="w-full">
-					<GrayButton
-						onclick={() => {
-							start_game = quiz.id;
-						}}
-						flex={true}
-					>
-						<!-- heroicons/legacy-outline/Play -->
-						<svg
-							class="w-5 h-5"
-							aria-hidden="true"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-							<path
-								d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							/>
-						</svg>
-					</GrayButton>
-				</div>
-			{:else}
-				<div use:tippy={{ content: 'You need to be logged in to start a game' }}>
-					<div class="w-full">
-						<GrayButton disabled={true} flex={true}>
-							<!-- heroicons/legacy-outline/Play -->
-							<svg
-								class="w-5 h-5"
-								aria-hidden="true"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-								<path
-									d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</GrayButton>
-					</div>
-				</div>
-			{/if}
-			<div class="w-full">
-				<GrayButton href="/practice?quiz_id={quiz.id}">
-					{$t('words.practice')}
-				</GrayButton>
-			</div>
-			<div class="w-full">
-				{#if logged_in}
-					<GrayButton flex={true} onclick={() => (download_id = quiz.id)}>
-						<svg
-							class="w-5 h-5 inline-block"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-							/>
-						</svg>
-						{$t('words.download')}
-					</GrayButton>
-				{:else}
-					<div use:tippy={{ content: 'You need to be logged in to download a game' }}>
-						<GrayButton disabled={true} flex={true}>
-							<svg
-								class="w-5 h-5 inline-block"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-								/>
-							</svg>
-							{$t('words.download')}
-						</GrayButton>
-					</div>
-				{/if}
-			</div>
-		</div>
-		<div class="flex justify-center">
-			<p class="text-sm text-ink-muted">
-				To report this quiz, contact the event organisers and quote quiz {quiz.id}.
-			</p>
-		</div>
-	</div>
 
-	{#each quiz.questions as question, index_question}
-		<div class="px-4 py-1">
-			<CollapsSection headerText={question.question} expanded={auto_expand}>
-				<div class="grid grid-cols-1 gap-2 rounded-b-lg bg-white dark:bg-gray-700 -mt-1">
-					<h3 class="text-3xl m-1 text-center">
-						{index_question + 1}: {@html question.question}
-					</h3>
-					{#if question.image}
-						<span>
-							<MediaComponent
-								css_classes="mx-auto"
-								src={question.image}
-								muted={true}
-							/>
-						</span>
-					{/if}
-					<p
-						class="m-1 flex flex-row gap-2 flex-nowrap whitespace-nowrap w-full justify-center"
+	<ol class="mt-10 flex flex-col gap-3">
+		{#each quiz.questions as question, index_question}
+			<li>
+				<details class="bt-glass bt-glass-faint group overflow-hidden" open={auto_expand}>
+					<summary
+						class="flex items-center gap-4 p-5 sm:px-7 cursor-pointer list-none hover:bg-white/[0.05] [&::-webkit-details-marker]:hidden"
 					>
+						<span class="bt-num text-2xl text-ink-muted w-10 shrink-0">{index_question + 1}</span>
+						<span class="flex-1 min-w-0 font-bold text-lg leading-snug break-words"
+							>{@html question.question}</span
+						>
+						<span class="text-sm text-ink-muted shrink-0 tabular-nums">{question.time} s</span>
 						<svg
-							class="w-8 h-8 inline-block"
+							class="h-5 w-5 shrink-0 transition-transform group-open:rotate-180"
+							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
-							viewBox="0 0 24 24"
-							xmlns="http://www.w3.org/2000/svg"
+							stroke-width="2.4"
+							aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" /></svg
 						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-						<span class="text-lg">{question.time}s</span>
-					</p>
-					{#if question.type === QuizQuestionType.ABCD || question.type === undefined || question.type === QuizQuestionType.CHECK}
-						<div class="grid grid-cols-2 gap-4 m-4 p-6">
-							{#each question.answers as answer, index_answer}
-								<div
-									class="p-1 rounded-lg py-4 shadow-xl"
-									style="background-color: {answer.color ??
-										default_colors[index_answer]}; color: {get_foreground_color(
-										answer.color ?? default_colors[index_answer]
-									)}"
-									class:shadow-blue-500={answer.right &&
-										question.type !== QuizQuestionType.VOTING}
-									class:shadow-yellow-500={!answer.right &&
-										question.type !== QuizQuestionType.VOTING}
-								>
-									<h4 class="text-center">
-										{quiz.questions[index_question].answers[index_answer]
-											.answer}
-									</h4>
-								</div>
-							{/each}
-						</div>
-					{:else if question.type === QuizQuestionType.RANGE}
-						<p class="m-1 text-center">
-							All numbers between {question.answers.min_correct}
-							and {question.answers.max_correct} are correct, where numbers between {question
-								.answers.min} and {question.answers.max} can be selected.
-						</p>
-					{:else if question.type === QuizQuestionType.ORDER}
-						<ul class="flex flex-col gap-4 m-4 p-6">
-							{#each question.answers as answer}
-								<li class="p-1 rounded-lg py-3 dark:bg-gray-500 bg-gray-300">
-									<h4 class="text-center">
-										{answer.answer}
-									</h4>
-								</li>
-							{/each}
-						</ul>
-					{:else if question.type === QuizQuestionType.VOTING || question.type === QuizQuestionType.TEXT}
-						<div class="grid grid-cols-2 gap-4 m-4 p-6">
-							{#each question.answers as _, index_answer}
-								<div class="p-1 rounded-lg py-4 dark:bg-gray-500 bg-gray-300">
-									<h4 class="text-center">
-										{quiz.questions[index_question].answers[index_answer]
-											.answer}
-									</h4>
-								</div>
-							{/each}
-						</div>
-					{:else if question.type === QuizQuestionType.SLIDE}
-						{#await import('$lib/play/admin/slide.svelte')}
-							<Spinner my_20={false} />
-						{:then c}
-							<div class="max-h-[90%] max-w-[90%]">
-								<c.default question={quiz.questions[index_question]} />
+					</summary>
+					<div class="px-5 pb-6 sm:px-7 flex flex-col gap-4">
+						{#if question.image}
+							<MediaComponent css_classes="max-h-64 w-auto rounded-[18px] mx-auto" src={question.image} muted={true} />
+						{/if}
+						{#if question.type === QuizQuestionType.ABCD || question.type === undefined || question.type === QuizQuestionType.CHECK || question.type === QuizQuestionType.VOTING}
+							<div class="grid sm:grid-cols-2 gap-3">
+								{#each question.answers as answer, index_answer}
+									{@const st = answerStyle(index_answer)}
+									{@const graded = question.type !== QuizQuestionType.VOTING}
+									<div
+										class="{st.className} min-h-16 px-3 py-3 text-base"
+										class:bt-tile-dim={graded && !answer.right}
+									>
+										<span class="bt-tile-mark h-10 w-10">
+											<ShapeMark shape={st.shape} size={18} />
+										</span>
+										<span class="flex-1 min-w-0 break-words normal-case font-bold">{answer.answer}</span>
+										{#if graded && answer.right}
+											<span class="text-[11px] tracking-[2px] pe-1">RIGHT</span>
+										{/if}
+									</div>
+								{/each}
 							</div>
-						{/await}
-					{/if}
-				</div>
-			</CollapsSection>
-		</div>
-	{/each}
-</div>
+						{:else if question.type === QuizQuestionType.RANGE}
+							<p class="text-ink-muted">
+								Any number from {question.answers.min_correct} to {question.answers.max_correct} is right.
+								Players pick between {question.answers.min} and {question.answers.max}.
+							</p>
+						{:else if question.type === QuizQuestionType.ORDER}
+							<ol class="flex flex-col gap-2">
+								{#each question.answers as answer, i}
+									<li class="flex items-center gap-3 rounded-[14px] bg-white/[0.06] px-4 py-3">
+										<span class="bt-num text-xl text-ink-muted w-6">{i + 1}</span>
+										<span class="font-bold">{answer.answer}</span>
+									</li>
+								{/each}
+							</ol>
+						{:else if question.type === QuizQuestionType.TEXT}
+							<p class="text-sm text-ink-muted">Accepted answers</p>
+							<ul class="flex flex-wrap gap-2">
+								{#each question.answers as answer}
+									<li class="rounded-full bg-white/10 px-4 py-2 font-bold">{answer.answer}</li>
+								{/each}
+							</ul>
+						{:else if question.type === QuizQuestionType.SLIDE}
+							{#await import('$lib/play/admin/slide.svelte')}
+								<Spinner my_20={false} />
+							{:then c}
+								<div class="max-h-[90%] max-w-[90%]">
+									<c.default question={quiz.questions[index_question]} />
+								</div>
+							{/await}
+						{:else}
+							<p class="text-sm text-ink-muted">Players type a short free answer.</p>
+						{/if}
+					</div>
+				</details>
+			</li>
+		{/each}
+	</ol>
+
+	<p class="mt-10 text-sm text-ink-muted">
+		To report this quiz, contact the event organisers and quote quiz {quiz.id}.
+	</p>
+</main>
 
 {#if start_game !== null}
-	<StartGamePopup bind:quiz_id={start_game} />
+	<StartGamePopup
+		bind:quiz_id={start_game}
+		quiz_title={quiz.title}
+		question_count={quiz.questions.length}
+	/>
 {/if}
 
 <DownloadQuiz bind:quiz_id={download_id} />

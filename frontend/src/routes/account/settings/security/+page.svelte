@@ -156,27 +156,32 @@ SPDX-License-Identifier: MPL-2.0
 {#await data}
 	<Spinner my_20={false} />
 {:then _}
-	<div class="grid grid-rows-2 h-screen">
-		<div class="grid grid-cols-2 h-full border-b-2 border-black">
-			<div class="h-full w-full border-r-2 border-black">
-				<h2 class="text-center text-2xl">{$t('security_settings.backup_code')}</h2>
-				<div class="flex h-full w-full justify-center">
-					<div class="m-auto">
+	<div class="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-14 pb-16 flex flex-col gap-4">
+		<div>
+			<span class="bt-eyebrow text-ink-muted mb-4">Account</span>
+			<h1 class="bt-headline text-[32px] lg:text-[52px]">Security</h1>
+			<a href="/account/settings" class="mt-3 inline-block text-sm text-ink-muted hover:text-ink hover:underline underline-offset-4">Back to settings</a>
+		</div>
+		<div class="grid gap-4 sm:grid-cols-2">
+			<div class="bt-glass bt-glass-faint p-6 flex flex-col gap-4">
+				<h2 class="font-black text-xl uppercase">{$t('security_settings.backup_code')}</h2>
+				<div class="flex">
+					<div>
 						<BrownButton onclick={get_backup_code}
 							>{$t('security_settings.get_backup_code')}</BrownButton
 						>
 					</div>
 				</div>
 			</div>
-			<div class="h-full w-full">
-				<h2 class="text-center text-2xl">{$t('security_settings.activate_2fa')}</h2>
+			<div class="bt-glass bt-glass-faint p-6 flex flex-col gap-4">
+				<h2 class="font-black text-xl uppercase">{$t('security_settings.activate_2fa')}</h2>
 				<div
-					class="flex h-full w-full justify-center flex-col"
+					class="flex flex-col"
 					class:pointer-events-none={!totp_activated}
 					class:grayscale={!totp_activated}
 					class:opacity-50={!totp_activated}
 				>
-					<div class="m-auto">
+					<div>
 						{#if user_data.require_password}
 							<div class="flex items-center space-x-2">
 								<button
@@ -188,14 +193,14 @@ SPDX-License-Identifier: MPL-2.0
 									type="button"
 									role="switch"
 									aria-checked="true"
-									class="relative inline-flex h-5 w-8 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-transparent bg-blue-700 transition focus:outline-hidden focus:ring focus:ring-blue-200"
+									class="relative inline-flex h-5 w-8 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-transparent bg-[var(--accent-green)] transition focus:outline-hidden focus:ring focus:ring-blue-200"
 								>
 									<span
 										aria-hidden="true"
 										class="pointer-events-none inline-block h-4 w-4 translate-x-3 rounded-full bg-white transition will-change-transform"
 									></span>
 								</button>
-								<span class="text-sm font-medium text-gray-700 dark:text-white"
+								<span class="text-sm font-medium text-ink"
 									>{$t('security_settings.2fa_activated')}</span
 								>
 							</div>
@@ -210,14 +215,14 @@ SPDX-License-Identifier: MPL-2.0
 									}}
 									role="switch"
 									aria-checked="false"
-									class="relative inline-flex h-5 w-8 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-transparent bg-gray-200 transition focus:outline-hidden focus:ring focus:ring-blue-200"
+									class="relative inline-flex h-5 w-8 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-transparent bg-white/20 transition focus:outline-hidden focus:ring focus:ring-blue-200"
 								>
 									<span
 										aria-hidden="true"
 										class="pointer-events-none inline-block h-4 w-4 translate-x-0 rounded-full bg-white transition will-change-transform"
 									></span>
 								</button>
-								<span class="text-sm font-medium text-gray-700 dark:text-white"
+								<span class="text-sm font-medium text-ink"
 									>{$t('security_settings.2fa_deactivated')}</span
 								>
 							</div>
@@ -226,25 +231,25 @@ SPDX-License-Identifier: MPL-2.0
 				</div>
 			</div>
 		</div>
-		<div class="grid grid-cols-2 h-full">
-			<div class="h-full w-full flex flex-col border-r-2 border-black">
-				<h2 class="text-center text-2xl">{$t('security_settings.webauthn')}</h2>
-				<div class="flex justify-center">
+		<div class="grid gap-4 sm:grid-cols-2">
+			<div class="bt-glass bt-glass-faint p-6 flex flex-col gap-4">
+				<h2 class="font-black text-xl uppercase">{$t('security_settings.webauthn')}</h2>
+				<div class="flex text-sm text-ink-muted">
 					{#if security_keys.length > 0}
 						<p>{$t('security_settings.webauthn_available')}</p>
 					{:else}
 						<p>{$t('security_settings.webauthn_unavailable')}</p>
 					{/if}
 				</div>
-				<div class="flex justify-center">
-					<div class="m-auto">
+				<div class="flex text-sm text-ink-muted">
+					<div>
 						<BrownButton onclick={add_security_key}
 							>{$t('security_settings.add_security_key')}</BrownButton
 						>
 					</div>
 				</div>
-				<div class="flex justify-center">
-					<ul class="list-disc block">
+				<div class="flex text-sm text-ink-muted">
+					<ul class="list-disc ps-5 text-ink">
 						{#each security_keys as key, i}
 							<li>
 								<button
@@ -258,9 +263,9 @@ SPDX-License-Identifier: MPL-2.0
 					</ul>
 				</div>
 			</div>
-			<div class="h-full w-full flex flex-col">
-				<h2 class="text-center text-2xl">{$t('security_settings.totp')}</h2>
-				<div class="flex justify-center">
+			<div class="bt-glass bt-glass-faint p-6 flex flex-col gap-4">
+				<h2 class="font-black text-xl uppercase">{$t('security_settings.totp')}</h2>
+				<div class="flex text-sm text-ink-muted">
 					{#if totp_activated}
 						<p>{$t('security_settings.totp_available')}</p>
 					{:else}
@@ -268,8 +273,8 @@ SPDX-License-Identifier: MPL-2.0
 					{/if}
 				</div>
 
-				<div class="flex justify-center">
-					<div class="m-auto">
+				<div class="flex text-sm text-ink-muted">
+					<div>
 						{#if totp_activated}
 							<BrownButton onclick={disable_totp}
 								>{$t('security_settings.disable_totp')}</BrownButton

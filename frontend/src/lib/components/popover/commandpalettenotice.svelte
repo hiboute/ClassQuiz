@@ -18,6 +18,10 @@ SPDX-License-Identifier: MPL-2.0
 		if (Cookies.get('commandpalette_notice')) {
 			return;
 		}
+		// Keyboard shortcut tip: only for mouse and keyboard screens.
+		if (!window.matchMedia('(pointer: fine)').matches) {
+			return;
+		}
 		open = true;
 		Cookies.set('commandpalette_notice', 'shown', {
 			expires: new Date().setDate(new Date().getDate() + 30)

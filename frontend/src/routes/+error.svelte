@@ -7,32 +7,22 @@ SPDX-License-Identifier: MPL-2.0
 <script lang="ts">
 	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import { page } from '$app/state';
-	import { getLocalization } from '$lib/i18n';
+	import ErrorPanel from '$lib/components/organiser/ErrorPanel.svelte';
 
 	navbarVisible.visible = true;
-	let status = page.status;
-	const { t } = getLocalization();
+	const status = $derived(page.status);
 </script>
 
-<svelte:head>
-	<title>{$t('words.error')} - {status}</title>
-</svelte:head>
-<h1 class="text-6xl text-center">{status}</h1>
-
 {#if status === 404}
-	<p class="text-center">
-		{$t('error_page.404_text')}
-	</p>
-{:else}
-	<p class="text-center">
-		{$t('error_page.unknown_error_text')}
-	</p>
-{/if}
-
-<div class="flex justify-center mt-8">
-	<img
-		class="rounded-lg"
-		src="https://http.cat/{status}"
-		alt="Cat representing the {status}-http error code"
+	<ErrorPanel
+		{status}
+		headline="Page not found"
+		message="This page does not exist, or it moved. Check the address, or head back to a game."
 	/>
-</div>
+{:else}
+	<ErrorPanel
+		{status}
+		headline="Something went wrong"
+		message="The server could not finish this request. Try again in a moment."
+	/>
+{/if}

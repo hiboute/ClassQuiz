@@ -25,7 +25,7 @@ SPDX-License-Identifier: MPL-2.0
 		fill="none"
 		stroke="currentColor"
 		viewBox="0 0 24 24"
-		use:tippy={{ content: 'This quiz is imported from KAHOOT!' }}
+		use:tippy={{ content: 'This quiz was imported from a file.' }}
 		xmlns="http://www.w3.org/2000/svg"
 	>
 		<path
@@ -41,7 +41,7 @@ SPDX-License-Identifier: MPL-2.0
 		fill="none"
 		stroke="currentColor"
 		viewBox="0 0 24 24"
-		use:tippy={{ content: 'This quiz was made by the creator themself!' }}
+		use:tippy={{ content: 'This quiz was written by its author.' }}
 		xmlns="http://www.w3.org/2000/svg"
 	>
 		<path
@@ -57,7 +57,7 @@ SPDX-License-Identifier: MPL-2.0
 		fill="none"
 		stroke="currentColor"
 		viewBox="0 0 24 24"
-		use:tippy={{ content: 'This quiz could be imported, it could be OC.' }}
+		use:tippy={{ content: 'This quiz may have been imported from a file.' }}
 		xmlns="http://www.w3.org/2000/svg"
 	>
 		<path

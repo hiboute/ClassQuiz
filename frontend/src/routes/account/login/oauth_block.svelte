@@ -6,18 +6,17 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	import { github_auth_enabled, google_auth_enabled, custom_oauth_name } from '$lib/config';
-	console.log(github_auth_enabled);
 </script>
 
 {#if google_auth_enabled}
-	<div class="flex items-center justify-center pt-4">
+	<div class="flex items-center w-full justify-center pt-2">
 		<a
 			href="/api/v1/users/oauth/google/login"
-			class="inline-flex w-fit p-1 rounded-lg border-gray-500 border border-2 hover:bg-[#4285F4] transition"
+			class="bt-btn-ghost bt-btn-block !text-sm !tracking-[2px]"
 			>Google Login
 
 			<svg
-				class="h-6 w-6 ml-4 dark:fill-gray-300"
+				class="h-5 w-5 fill-current"
 				role="img"
 				viewBox="0 0 24 24"
 				xmlns="http://www.w3.org/2000/svg"
@@ -30,13 +29,13 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 {/if}
 {#if github_auth_enabled}
-	<div class="flex items-center w-full justify-center pt-4">
+	<div class="flex items-center w-full justify-center pt-2">
 		<a
 			href="/api/v1/users/oauth/github/login"
-			class="inline-flex w-fit p-1 rounded-lg border-gray-500 border border-2 hover:bg-[#181717] transition hover:text-white group"
+			class="bt-btn-ghost bt-btn-block !text-sm !tracking-[2px]"
 			>GitHub Login
 			<svg
-				class="h-6 w-6 ml-4 dark:fill-gray-300 group-hover:fill-white transition"
+				class="h-5 w-5 fill-current"
 				role="img"
 				viewBox="0 0 24 24"
 				xmlns="http://www.w3.org/2000/svg"
@@ -49,13 +48,13 @@ SPDX-License-Identifier: MPL-2.0
 	</div>
 {/if}
 {#if custom_oauth_name}
-	<div class="flex items-center w-full justify-center pt-4">
+	<div class="flex items-center w-full justify-center pt-2">
 		<a
 			href="/api/v1/users/oauth/custom/login"
-			class="inline-flex w-fit p-1 rounded-lg border-gray-500 border border-2 hover:bg-[#F78C40] transition hover:text-white group"
+			class="bt-btn-ghost bt-btn-block !text-sm !tracking-[2px]"
 			>OpenID Login
 			<svg
-				class="h-6 w-6 ml-4 dark:fill-gray-300 group-hover:fill-white transition"
+				class="h-5 w-5 fill-current"
 				role="img"
 				viewBox="0 0 24 24"
 				xmlns="http://www.w3.org/2000/svg"

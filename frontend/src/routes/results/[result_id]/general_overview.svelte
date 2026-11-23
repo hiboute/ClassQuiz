@@ -5,47 +5,64 @@ SPDX-License-Identifier: MPL-2.0
 -->
 
 <script lang="ts">
-	import type { Question } from '$lib/quiz_types';
-	import { getLocalization } from '$lib/i18n';
-
-	const { t } = getLocalization();
-
 	interface Props {
-		scores: {
-			[key: string]: string;
-		};
-		title: string;
-		timestamp: string;
+		scores: { [key: string]: string | number };
+		answers: { username: string; right: boolean }[][];
+		questions: unknown[];
 	}
 
-	let { scores, title, timestamp }: Props = $props();
+	let { scores, answers, questions }: Props = $props();
 
-	const usernames = Object.keys(scores);
-
-	const get_average_final_score = () => {
-		let score_data = 0;
-		for (const username of usernames) {
-			score_data += parseInt(scores[username]);
+	const ranking = $derived(
+		Object.entries(scores)
+			.map(([name, s]) => ({ name, score: Number(s) || 0 }))
+			.sort((a, b) => b.score - a.score)
+	);
+	const average = $derived(
+		ranking.length ? Math.round(ranking.reduce((n, r) => n + r.score, 0) / ranking.length) : 0
+	);
+	const accuracy = $derived.by(() => {
+		let total = 0;
+		let right = 0;
+		for (const q of answers ?? []) {
+			for (const a of q ?? []) {
+				total++;
+				if (a.right) right++;
+			}
 		}
-		return score_data / usernames.length;
-	};
+		return total ? Math.round((right / total) * 100) : 0;
+	});
+	const stats = $derived([
+		{ label: 'Players', value: ranking.length },
+		{ label: 'Questions', value: questions.length },
+		{ label: 'Average score', value: average },
+		{ label: 'Right answers', value: `${accuracy}%` }
+	]);
 </script>
 
-<div class="w-full">
-	<div class="flex justify-center w-full">
-		<p class="text-3xl w-5/6 text-center">
-			{@html $t('results_page.general_overview.sentence', {
-				title,
-				date: new Date(timestamp).toLocaleString(),
-				player_count: usernames.length,
-				average_score: get_average_final_score().toFixed(0)
-			})}
-		</p>
-	</div>
-</div>
+<dl class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+	{#each stats as s}
+		<div class="bt-glass bt-glass-faint p-5 sm:p-6">
+			<dt class="bt-eyebrow !text-[11px] !tracking-[3px] text-ink-muted">{s.label}</dt>
+			<dd class="bt-num text-[40px] sm:text-[52px] mt-4">{s.value}</dd>
+		</div>
+	{/each}
+</dl>
 
-<style>
-	underline {
-		text-decoration: underline;
-	}
-</style>
+{#if ranking.length}
+	<section class="bt-glass bt-glass-faint mt-4 p-5 sm:p-7">
+		<span class="bt-eyebrow text-ink-muted mb-4">Top {Math.min(10, ranking.length)}</span>
+		<ol class="flex flex-col gap-1.5">
+			{#each ranking.slice(0, 10) as r, i}
+				<li
+					class="flex items-center gap-4 rounded-[14px] px-4 py-3"
+					style={i < 3 ? 'background: rgba(255,255,255,0.10)' : 'background: rgba(255,255,255,0.04)'}
+				>
+					<span class="bt-num text-2xl w-8 text-ink-muted">{i + 1}</span>
+					<span class="flex-1 min-w-0 truncate font-bold">{r.name}</span>
+					<span class="bt-num text-2xl">{r.score}</span>
+				</li>
+			{/each}
+		</ol>
+	</section>
+{/if}

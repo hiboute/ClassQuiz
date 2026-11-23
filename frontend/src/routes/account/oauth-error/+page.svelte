@@ -6,39 +6,22 @@ SPDX-License-Identifier: MPL-2.0
 
 <script lang="ts">
 	let { data } = $props();
-	const { error } = data;
+	const error = $derived(data.error);
 </script>
 
-<div>
-	<div class="flex justify-center w-full">
-		<h1 class="text-6xl">Error authenticating</h1>
-	</div>
-
-	<div class="flex justify-center w-full pt-10">
-		<p>
+<main class="min-h-[calc(100dvh-4rem)] flex items-center justify-center px-4 py-10">
+	<div class="bt-glass w-full max-w-lg p-6 sm:p-10">
+		<span class="bt-eyebrow text-ink-muted mb-3">Sign in</span>
+		<h1 class="bt-headline text-[28px] sm:text-[38px]">Sign in did not work</h1>
+		<p class="mt-4 text-ink-muted">
 			{#if error === 'email'}
-				GitHub didn't respond with an email-address. Are you sure your email-address is
-				verified?
+				The provider did not share an email address. Check that the email on that account is
+				verified, then try again.
 			{:else}
-				There was an error authenticating you. Are you sure you've got an email? Is the
-				Email verified?
+				The provider could not confirm who you are. Check that your account has a verified email,
+				then try again.
 			{/if}
 		</p>
+		<a href="/account/login" class="bt-btn-primary mt-8">Back to sign in</a>
 	</div>
-	<div class="flex justify-center w-full pt-10">
-		<a
-			href="/account/login"
-			class="px-4 py-2 leading-5 text-black dark:text-white transition-colors duration-200 transform bg-gray-50 dark:bg-gray-700 rounded-sm text-center hover:bg-gray-600 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
-		>
-			Go back to login-page
-		</a>
-	</div>
-	<div class="flex justify-center w-full pt-10">
-		<p>
-			If the error persists, please open an <a
-				href="https://github.com/mawoka-myblock/ClassQuiz/issues/new?assignees=&labels=&template=Bug_report.md"
-				class="underline transition hover:text-blue-300">issue on GitHub</a
-			>.
-		</p>
-	</div>
-</div>
+</main>
