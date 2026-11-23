@@ -77,7 +77,7 @@ SPDX-License-Identifier: MPL-2.0
 </script>
 
 <svelte:head>
-	<title>ClassQuiz - View {quiz.title}</title>
+	<title>India Tech Hub Live Quiz - View {quiz.title}</title>
 </svelte:head>
 
 <div>
@@ -229,12 +229,9 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		</div>
 		<div class="flex justify-center">
-			<a
-				href="mailto:report@mawoka.eu?subject=Report quiz {quiz.id}"
-				class="text-sm underline"
-			>
-				{$t('words.report')}
-			</a>
+			<p class="text-sm text-ink-muted">
+				To report this quiz, contact the event organisers and quote quiz {quiz.id}.
+			</p>
 		</div>
 	</div>
 

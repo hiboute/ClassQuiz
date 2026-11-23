@@ -11,8 +11,514 @@ SPDX-License-Identifier: MPL-2.0
 @plugin "@tailwindcss/typography";
 @tailwind utilities;
 
+/* The app is dark only: `dark:` utilities follow the `.dark` class set on <html> in app.html. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   Beauty Tech EA&I design foundation
+   Source: the "Beauty Tech EA&I" kit (tokens.json, bundle.css) and the
+   "colour worlds" direction. Screens use the .bt-* classes below, the Tailwind
+   theme entries in @theme, and the components in $lib/brand.
+   ========================================================================== */
+
+/* ---------- font: LOREAL Essentielle, four weights ---------- */
+@font-face {
+	font-family: 'LOREAL Essentielle';
+	src: url('/fonts/LOREALEssentielle-Light.woff2') format('woff2');
+	font-weight: 300;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'LOREAL Essentielle';
+	src: url('/fonts/LOREALEssentielle-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'LOREAL Essentielle';
+	src: url('/fonts/LOREALEssentielle-Bold.woff2') format('woff2');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'LOREAL Essentielle';
+	src: url('/fonts/LOREALEssentielle-Black.woff2') format('woff2');
+	font-weight: 900;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* ---------- tokens as CSS variables ---------- */
+:root {
+	--bt-font: 'LOREAL Essentielle', 'Century Gothic', CenturyGothic, AppleGothic, sans-serif;
+
+	--ground-night: #090924;
+	--ground-black: #000000;
+	--ground-paper: #feffff;
+	--ink: #feffff;
+	--ink-muted: #cbd5e1;
+	--ink-dark: #000000;
+
+	--accent-blue: #418eed;
+	--accent-purple: #692aac;
+	--accent-green: #27be82;
+	--accent-sky: #5db5df;
+	--accent-indigo: #170d43;
+	--accent-orchid: #d783ff;
+	--accent-sky-tint: #9ed3ec;
+	--accent-green-tint: #73e2b6;
+	--accent-orchid-tint: #e7b5ff;
+	--accent-indigo-tint: #b2a5ee;
+	--accent-violet: #664bdc;
+	--accent-electric: #544df8;
+	--accent-lavender: #a59fff;
+	--accent-pink: #f982fa;
+	--accent-aqua: #83c8d8;
+	--accent-cyan: #00fefe;
+	--accent-cobalt: #0d458a;
+
+	--fill-glass-faint: rgba(255, 255, 255, 0.049);
+	--fill-glass: rgba(255, 255, 255, 0.078);
+	--fill-glass-mid: rgba(255, 255, 255, 0.17);
+	--fill-glass-strong: rgba(255, 255, 255, 0.24);
+	--fill-glass-paper: rgba(254, 255, 255, 0.66);
+	--fill-deep: rgba(10, 5, 31, 0.67);
+	--fill-scrim: rgba(23, 13, 67, 0.6);
+	--fill-scrim-center: rgba(23, 13, 67, 0.24);
+	--hairline: #feffff;
+	--hairline-soft: rgba(254, 255, 255, 0.29);
+
+	--radius-bt-xs: 3px;
+	--radius-bt-sm: 8px;
+	--radius-bt-md: 12px;
+	--radius-bt-lg: 18px;
+	--radius-bt-xl: 25px;
+	--radius-bt-2xl: 36px;
+	--radius-bt-photo: 58px;
+	--radius-bt-pill: 9999px;
+
+	--shadow-glass: 44px 44px 90px -8px rgba(13, 13, 13, 0.06);
+	--pill-height: 48px;
+
+	/* the four answer tiles: colour + lightness + shape, never hue alone */
+	--answer-a: linear-gradient(120deg, var(--accent-pink) 0%, var(--accent-orchid) 100%);
+	--answer-a-ink: var(--ink-dark);
+	--answer-b: linear-gradient(120deg, var(--accent-purple) 0%, var(--accent-violet) 100%);
+	--answer-b-ink: var(--ink);
+	--answer-c: linear-gradient(120deg, var(--accent-green) 0%, var(--accent-sky) 100%);
+	--answer-c-ink: var(--ink-dark);
+	--answer-d: linear-gradient(100deg, #0d458a 0%, #2a6abb 62%, var(--accent-blue) 100%);
+	--answer-d-ink: var(--ink);
+
+	/* default world: midnight */
+	--ground: #090924;
+	--ground-mid: #1f285d;
+	--ground-glow: #516487;
+	--fill-card: rgba(178, 165, 238, 0.092);
+}
+
+/* ---------- the six colour worlds: set data-world on any wrapper ---------- */
+[data-world='indigo'] {
+	--ground: #170d43;
+	--ground-mid: #4e3ac0;
+	--ground-glow: #d87acd;
+	--fill-card: rgba(255, 255, 255, 0.078);
+}
+[data-world='teal'] {
+	--ground: #07313e;
+	--ground-mid: #24535b;
+	--ground-glow: #b4eccd;
+	--fill-card: #1a3d43;
+}
+[data-world='violet'] {
+	--ground: #16134f;
+	--ground-mid: #6731b0;
+	--ground-glow: #ec91d4;
+	--fill-card: rgba(255, 255, 255, 0.24);
+}
+[data-world='midnight'] {
+	--ground: #090924;
+	--ground-mid: #1f285d;
+	--ground-glow: #516487;
+	--fill-card: rgba(178, 165, 238, 0.092);
+}
+[data-world='cobalt'] {
+	--ground: #091443;
+	--ground-mid: #0d458a;
+	--ground-glow: #5ab2da;
+	--fill-card: rgba(255, 255, 255, 0.049);
+}
+[data-world='ultraviolet'] {
+	--ground: #0e061f;
+	--ground-mid: #231049;
+	--ground-glow: #48669c;
+	--fill-card: rgba(255, 255, 255, 0.049);
+}
+
+/* ---------- Tailwind theme entries ---------- */
+@theme {
+	--font-sans: 'LOREAL Essentielle', 'Century Gothic', CenturyGothic, AppleGothic, sans-serif;
+
+	--color-ink: #feffff;
+	--color-ink-muted: #cbd5e1;
+	--color-ink-dark: #000000;
+	--color-night: #090924;
+
+	--color-accent-blue: #418eed;
+	--color-accent-purple: #692aac;
+	--color-accent-green: #27be82;
+	--color-accent-sky: #5db5df;
+	--color-accent-indigo: #170d43;
+	--color-accent-orchid: #d783ff;
+	--color-accent-violet: #664bdc;
+	--color-accent-pink: #f982fa;
+	--color-accent-lavender: #a59fff;
+	--color-accent-cobalt: #0d458a;
+	--color-accent-sky-tint: #9ed3ec;
+	--color-accent-green-tint: #73e2b6;
+	--color-accent-orchid-tint: #e7b5ff;
+
+	/* answer colours: solid start/end of each tile gradient */
+	--color-answer-a: #f982fa;
+	--color-answer-a-to: #d783ff;
+	--color-answer-b: #692aac;
+	--color-answer-b-to: #664bdc;
+	--color-answer-c: #27be82;
+	--color-answer-c-to: #5db5df;
+	--color-answer-d: #0d458a;
+	--color-answer-d-to: #418eed;
+
+	/* legacy screens lean on Tailwind grays in dark mode: tint them into the midnight world */
+	--color-gray-600: #363d78;
+	--color-gray-700: #262b5e;
+	--color-gray-800: #181c45;
+	--color-gray-900: #0e1131;
+
+	--radius-card: 25px;
+	--radius-tile: 12px;
+	--radius-photo: 58px;
+}
+
+/* world-dependent colours, resolved at use time (bg-ground, bg-card, ...) */
+@theme inline {
+	--color-ground: var(--ground);
+	--color-ground-mid: var(--ground-mid);
+	--color-ground-glow: var(--ground-glow);
+	--color-card: var(--fill-card);
+	--color-glass: var(--fill-glass);
+	--color-glass-mid: var(--fill-glass-mid);
+	--color-glass-strong: var(--fill-glass-strong);
+	--color-deep: var(--fill-deep);
+}
+
+/* ---------- base ---------- */
+@layer base {
+	button:not(:disabled),
+	[role='button']:not(:disabled) {
+		cursor: pointer;
+	}
+
+	html {
+		color-scheme: dark;
+		background-color: var(--ground-night);
+		color: var(--ink);
+		font-family: var(--bt-font);
+		-webkit-font-smoothing: antialiased;
+		text-rendering: geometricPrecision;
+	}
+
+	/* global shell: the midnight world ground */
+	body {
+		min-height: 100vh;
+		min-height: 100dvh;
+		background-color: #090924;
+		background-image:
+			radial-gradient(70% 95% at 100% 0%, #516487 0%, transparent 72%),
+			radial-gradient(110% 130% at 72% 38%, #1f285d 0%, transparent 78%);
+		background-attachment: fixed;
+		color: var(--ink);
+	}
+}
+
+/* ---------- reusable classes ---------- */
+@layer components {
+	/* full-bleed ground of the current world (bloom of glow and mid over ground) */
+	.bt-world-ground {
+		background-color: var(--ground);
+		background-image:
+			radial-gradient(70% 95% at 100% 0%, var(--ground-glow) 0%, transparent 72%),
+			radial-gradient(110% 130% at 72% 38%, var(--ground-mid) 0%, transparent 78%);
+		color: var(--ink);
+	}
+
+	/* glass cards: translucent, radius 25px, never a border */
+	.bt-glass {
+		background: var(--fill-glass-mid);
+		border: 0;
+		border-radius: var(--radius-bt-xl);
+		color: var(--ink);
+		-webkit-backdrop-filter: blur(18px);
+		backdrop-filter: blur(18px);
+	}
+	.bt-glass-faint {
+		background: var(--fill-glass);
+	}
+	.bt-glass-strong {
+		background: var(--fill-glass-strong);
+	}
+	.bt-glass-world {
+		background: var(--fill-card);
+	}
+	.bt-glass-deep {
+		background: var(--fill-deep);
+	}
+
+	/* tracked capitals: eyebrows and labels */
+	.bt-eyebrow {
+		display: block;
+		font-weight: 400;
+		font-size: 13px;
+		line-height: 1.2;
+		letter-spacing: 4px;
+		text-transform: uppercase;
+	}
+	.bt-eyebrow-lg {
+		font-size: 21px;
+		letter-spacing: 6px;
+	}
+
+	/* titles: Regular kicker + Black headline, both capitals */
+	.bt-kicker {
+		display: block;
+		font-weight: 400;
+		text-transform: uppercase;
+		line-height: 1.2;
+	}
+	.bt-headline {
+		display: block;
+		font-weight: 900;
+		text-transform: uppercase;
+		line-height: 1.08;
+	}
+
+	/* gradient text: one line per screen */
+	.bt-text-aurora,
+	.bt-text-mint,
+	.bt-text-orchid,
+	.bt-text-orchid-sky,
+	.bt-text-display,
+	.bt-text-ocean,
+	.bt-text-chain {
+		-webkit-background-clip: text;
+		background-clip: text;
+		-webkit-text-fill-color: transparent;
+		color: transparent;
+	}
+	.bt-text-aurora {
+		background-image: linear-gradient(90deg, var(--accent-sky) 0%, var(--accent-green) 100%);
+	}
+	.bt-text-mint {
+		background-image: linear-gradient(90deg, var(--accent-green) 0%, var(--accent-sky) 100%);
+	}
+	.bt-text-orchid {
+		background-image: linear-gradient(90deg, var(--accent-orchid) 0%, var(--accent-blue) 100%);
+	}
+	.bt-text-orchid-sky {
+		background-image: linear-gradient(90deg, var(--accent-orchid) 0%, var(--accent-sky) 100%);
+	}
+	.bt-text-display {
+		background-image: linear-gradient(
+			90deg,
+			var(--accent-orchid) 0%,
+			var(--accent-sky) 62%,
+			var(--accent-violet) 100%
+		);
+	}
+	.bt-text-ocean {
+		background-image: linear-gradient(90deg, var(--accent-blue) 0%, var(--accent-green) 100%);
+	}
+	.bt-text-chain {
+		background-image: linear-gradient(
+			90deg,
+			var(--accent-purple) 0%,
+			var(--accent-sky) 50%,
+			var(--accent-orchid) 99%
+		);
+	}
+
+	/* pills */
+	.bt-btn-primary,
+	.bt-btn-ghost {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5em;
+		box-sizing: border-box;
+		min-height: var(--pill-height);
+		padding: 0 28px;
+		border: 0;
+		border-radius: var(--radius-bt-pill);
+		font-family: var(--bt-font);
+		font-weight: 900;
+		font-size: 16px;
+		line-height: 1;
+		letter-spacing: 3px;
+		text-transform: uppercase;
+		text-align: center;
+		text-decoration: none;
+		white-space: nowrap;
+		cursor: pointer;
+		transition:
+			filter 150ms ease,
+			background-color 150ms ease,
+			opacity 150ms ease;
+	}
+	/* sky to green, black text: the JOIN button */
+	.bt-btn-primary {
+		background: linear-gradient(90deg, var(--accent-sky) 0%, var(--accent-green) 100%);
+		color: var(--ink-dark);
+	}
+	.bt-btn-primary:hover {
+		filter: brightness(1.08);
+	}
+	.bt-btn-ghost {
+		background: var(--fill-glass-mid);
+		color: var(--ink);
+		font-weight: 700;
+	}
+	.bt-btn-ghost:hover {
+		background: var(--fill-glass-strong);
+	}
+	.bt-btn-primary:focus-visible,
+	.bt-btn-ghost:focus-visible {
+		outline: 3px solid var(--accent-sky-tint);
+		outline-offset: 3px;
+	}
+	.bt-btn-primary:disabled,
+	.bt-btn-ghost:disabled,
+	.bt-btn-primary[aria-disabled='true'],
+	.bt-btn-ghost[aria-disabled='true'] {
+		opacity: 0.45;
+		cursor: not-allowed;
+		filter: none;
+	}
+	/* sizes: phone thumb target, and the big join pill */
+	.bt-btn-lg {
+		min-height: 64px;
+		font-size: 20px;
+		letter-spacing: 5px;
+		padding: 0 36px;
+	}
+	.bt-btn-xl {
+		min-height: 72px;
+		font-size: 24px;
+		letter-spacing: 6px;
+		padding: 0 44px;
+	}
+	.bt-btn-block {
+		display: flex;
+		width: 100%;
+	}
+
+	/* form field on glass (phone join look) */
+	.bt-input {
+		display: block;
+		width: 100%;
+		border: 0;
+		border-radius: var(--radius-bt-xl);
+		background: var(--fill-glass-mid);
+		color: var(--ink);
+		font-family: var(--bt-font);
+		font-size: 18px;
+		padding: 14px 20px;
+		outline: none;
+	}
+	.bt-input::placeholder {
+		color: var(--ink-muted);
+		opacity: 0.8;
+	}
+	.bt-input:focus-visible {
+		box-shadow: 0 0 0 3px var(--accent-sky);
+	}
+
+	/* answer tiles: gradient, ink and shape mark (see $lib/brand/answers.ts) */
+	.bt-tile-a,
+	.bt-tile-b,
+	.bt-tile-c,
+	.bt-tile-d {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		border: 0;
+		border-radius: var(--radius-bt-xl);
+		font-family: var(--bt-font);
+		font-weight: 900;
+		text-transform: uppercase;
+		line-height: 1.08;
+		overflow: hidden;
+	}
+	.bt-tile-a {
+		background: var(--answer-a);
+		color: var(--answer-a-ink);
+	}
+	.bt-tile-b {
+		background: var(--answer-b);
+		color: var(--answer-b-ink);
+	}
+	.bt-tile-c {
+		background: var(--answer-c);
+		color: var(--answer-c-ink);
+	}
+	.bt-tile-d {
+		background: var(--answer-d);
+		color: var(--answer-d-ink);
+	}
+	/* the dark square that holds the shape mark inside a tile */
+	.bt-tile-mark {
+		flex: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-bt-md);
+		background: var(--fill-deep);
+		color: var(--ink);
+	}
+	/* states: dimmed (not chosen / wrong) */
+	.bt-tile-dim {
+		opacity: 0.28;
+	}
+
+	/* big rounded numbers */
+	.bt-num {
+		font-weight: 900;
+		line-height: 0.84;
+		font-variant-numeric: tabular-nums;
+		font-feature-settings: 'tnum' 1;
+		text-transform: uppercase;
+	}
+
+	/* mesh wave overlay (plain grounds only) */
+	.bt-mesh {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		width: 100%;
+		height: auto;
+		pointer-events: none;
+		user-select: none;
+	}
+}
+
+/* ---------- legacy ClassQuiz helpers, restyled ---------- */
 .marck-script {
-	font-family: 'Marck Script';
+	font-family: var(--bt-font);
+	font-weight: 900;
+	text-transform: uppercase;
 }
 
 .link-hover {
@@ -20,26 +526,20 @@ SPDX-License-Identifier: MPL-2.0
 }
 
 .link-hover:hover {
-	color: #4e6e58;
-}
-@layer base {
-	button:not(:disabled),
-	[role='button']:not(:disabled) {
-		cursor: pointer;
-	}
+	color: var(--accent-sky);
 }
 
 @utility normal-background {
-	@apply bg-gradient-to-r from-[#009444] via-[#39b54a] to-[#8dc63f] dark:bg-[#0f2702] dark:from-[#0f2702] dark:via-[#0f2702] dark:to-[#0f2702];
+	background-color: var(--ground-night);
 }
 
 @utility admin-button {
-	@apply px-4 py-2 leading-5 text-white transition-colors duration-200 transform bg-gray-700 rounded-sm text-center hover:bg-gray-600 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50;
+	@apply px-4 py-2 leading-5 text-ink transition-colors duration-200 transform bg-white/15 rounded-full text-center hover:bg-white/25 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 @utility action-button {
-	@apply px-4 py-2 leading-5 text-black dark:text-white transition-colors duration-200 transform bg-gray-50 dark:bg-gray-700 rounded-sm text-center hover:bg-gray-300 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-600;
+	@apply px-4 py-2 leading-5 text-ink transition-colors duration-200 transform bg-white/15 rounded-full text-center hover:bg-white/25 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50;
 }
 @utility btn-nav {
-	@apply text-lg font-medium px-3 text-gray-600 hover:text-green-600 py-1.5 transition-all duration-300;
+	@apply text-base font-bold uppercase tracking-[2px] px-3 text-ink-muted hover:text-ink py-1.5 transition-all duration-300;
 }

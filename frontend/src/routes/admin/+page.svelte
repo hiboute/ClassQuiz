@@ -240,7 +240,7 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:window onbeforeunload={confirmUnload} />
 <svelte:head>
-	<title>ClassQuiz - Host</title>
+	<title>India Tech Hub Live Quiz - Host</title>
 </svelte:head>
 <div
 	class="min-h-screen min-w-full"
