@@ -34,20 +34,36 @@ export class SocketGameControls {
 		this.socket.emit('get_final_results', {});
 	}
 
-	start_game() {
-		this.socket.emit('start_game', '');
+	/** get_ready_seconds: length of the "get ready" screen, 0 turns it off */
+	start_game(get_ready_seconds?: number) {
+		this.socket.emit(
+			'start_game',
+			get_ready_seconds === undefined ? '' : { get_ready_seconds }
+		);
 	}
 
-	kick_player(username: string, players: any[]) {
+	kick_player<T extends { username: string }>(username: string, players: T[]): T[] {
 		this.socket.emit('kick_player', { username: username });
+		return players.filter((p) => p.username !== username);
+	}
 
-		for (let i = 0; i < players.length; i++) {
-			console.log(players[i].username, username);
-			if (players[i].username === username) {
-				players.splice(i, 1);
-				break;
-			}
-		}
-		return players;
+	lock_game() {
+		this.socket.emit('lock_game', {});
+	}
+
+	unlock_game() {
+		this.socket.emit('unlock_game', {});
+	}
+
+	pause_game() {
+		this.socket.emit('pause_game', {});
+	}
+
+	resume_game() {
+		this.socket.emit('resume_game', {});
+	}
+
+	end_game_now() {
+		this.socket.emit('end_game_now', {});
 	}
 }

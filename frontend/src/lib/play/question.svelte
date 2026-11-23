@@ -1,366 +1,385 @@
 <!--
 SPDX-FileCopyrightText: 2023 Marlon W (Mawoka)
+SPDX-FileCopyrightText: 2026 Charles-Henri ROBICHE
 
 SPDX-License-Identifier: MPL-2.0
 -->
 
+<!--
+	Phone answer screen, in the question's colour world: question number and
+	countdown ring on top, the question small, then the input for its type
+	filling the rest of the screen. Once answered it turns into the
+	"Answer locked in" state. The parent owns the timer (pause and resume come
+	from the host) and sends the answer.
+-->
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import type { ReturnQuestion } from '$lib/quiz_types';
-	import { QuizQuestionType } from '$lib/quiz_types';
-	import { socket } from '$lib/socket';
-	import Spinner from '../Spinner.svelte';
-	import { getLocalization } from '$lib/i18n';
-	import { kahoot_icons } from './kahoot_mode_assets/kahoot_icons';
 	import CircularTimer from '$lib/play/circular_progress.svelte';
-	import { flip } from 'svelte/animate';
-	import BrownButton from '$lib/components/buttons/brown.svelte';
-	import { get_foreground_color } from '../helpers';
-	import MediaComponent from '$lib/editor/MediaComponent.svelte';
-
-	const { t } = getLocalization();
+	import ShapeMark from '$lib/brand/ShapeMark.svelte';
+	import { answerStyle } from '$lib/brand/answers';
+	import PhoneShell from '$lib/play/phone/PhoneShell.svelte';
+	import Choice from '$lib/play/questions/choice.svelte';
+	import Check from '$lib/play/questions/check.svelte';
+	import TextAnswer from '$lib/play/questions/text.svelte';
+	import RangeAnswer from '$lib/play/questions/range.svelte';
+	import OrderAnswer from '$lib/play/questions/order.svelte';
+	import {
+		formatPoints,
+		isShapesMode,
+		plainText,
+		questionWorld,
+		type AnswerPayload,
+		type LockedAnswer
+	} from '$lib/play/phone/phone';
 
 	interface Props {
 		question: ReturnQuestion;
-		game_mode: any;
-		question_index: string | number;
-		solution: any;
+		question_index: number | string;
+		question_count?: number;
+		game_mode?: any;
+		username?: string;
+		total_score?: number | null;
+		/** Date.now() value at which the time runs out */
+		deadline: number;
+		paused?: boolean;
+		/** seconds left while paused */
+		paused_remaining?: number | null;
+		/** the host closed the question (everyone answered, solutions shown) */
+		time_up?: boolean;
+		locked?: LockedAnswer | null;
+		/** refusal message for a free-text answer (word cloud): the player may retry */
+		answer_error?: string;
+		onanswer: (payload: AnswerPayload, locked: LockedAnswer) => void;
 	}
 
 	let {
-		question = $bindable(),
-		game_mode = $bindable(),
+		question,
 		question_index,
-		solution
+		question_count,
+		game_mode,
+		username = '',
+		total_score = null,
+		deadline,
+		paused = false,
+		paused_remaining = null,
+		time_up = false,
+		locked = null,
+		answer_error = '',
+		onanswer
 	}: Props = $props();
 
-	if (question.type === undefined) {
-		question.type = QuizQuestionType.ABCD;
-	} else {
-		question.type = QuizQuestionType[question.type];
-	}
+	const index = $derived(Number(question_index) || 0);
+	const type = $derived(String(question.type ?? 'ABCD').toUpperCase());
+	const world = $derived(questionWorld(index));
+	const shapes = $derived(isShapesMode(game_mode));
+	const text = $derived(plainText(question.question));
+	const total = $derived(Math.max(1, Number(question.time) || 1));
 
-	let timer_res = $state(question.time);
-	let selected_answer: string = $state();
+	// shorter phones (360x740 and below) get a smaller ring
+	let vh = $state(844);
+	const ring_size = $derived(vh < 760 ? 76 : 92);
 
-	// Stop the timer if the question is answered
-	const timer = (time: string) => {
-		let seconds = Number(time);
-		let timer_interval = setInterval(() => {
-			if (timer_res === '0') {
-				clearInterval(timer_interval);
-				return;
-			} else {
-				seconds--;
-			}
+	let now = $state(Date.now());
+	const tick = setInterval(() => (now = Date.now()), 250);
+	onDestroy(() => clearInterval(tick));
 
-			timer_res = seconds.toString();
-		}, 1000);
-	};
-	socket.on('everyone_answered', (_) => {
-		timer_res = '0';
-	});
+	const exact_left = $derived(
+		paused && paused_remaining !== null && paused_remaining !== undefined
+			? Math.max(0, Number(paused_remaining))
+			: Math.max(0, (deadline - now) / 1000)
+	);
+	const seconds_left = $derived(Math.ceil(exact_left));
+	const progress = $derived(1 - exact_left / total);
+	const over = $derived(time_up || (!paused && seconds_left <= 0));
 
-	timer(question.time);
-
+	// Only one answer per question, whatever the number of taps
+	let sending = false;
+	// a refused word cloud entry unlocks the field again
 	$effect(() => {
-		if (solution !== undefined) {
-			timer_res = '0';
-		}
+		if (!locked) sending = false;
 	});
-
-	const selectAnswer = (answer: string) => {
-		selected_answer = answer;
-		socket.emit('submit_answer', {
-			question_index: question_index,
-			answer: answer
-		});
+	const send = (payload: Omit<AnswerPayload, 'question_index'>, lock: LockedAnswer) => {
+		if (sending || locked) return;
+		sending = true;
+		onanswer({ question_index: index, ...payload }, lock);
 	};
 
-	const select_complex_answer = (data) => {
-		selected_answer = 'a';
-		const new_array = [];
-		for (let i = 0; i < data.length; i++) {
-			new_array.push({ answer: data[i].answer });
-		}
-		socket.emit('submit_answer', {
-			question_index: question_index,
-			answer: 'a',
-			complex_answer: new_array
-		});
-	};
-
-	let text_input = $state('');
-
-	let slider_value = $state([0]);
-	if (question.type === QuizQuestionType.RANGE) {
-		slider_value[0] = (question.answers.max - question.answers.min) / 2 + question.answers.min;
-	}
-	const set_answer_if_not_set_range = (time) => {
-		if (question.type !== QuizQuestionType.RANGE) {
-			return;
-		}
-		if (selected_answer === undefined && time === '0') {
-			selected_answer = `${slider_value[0]}`;
-			selectAnswer(selected_answer);
-		}
-	};
-
-	if (question.type === QuizQuestionType.ORDER) {
-		for (let i = 0; i < question.answers.length; i++) {
-			question.answers[i] = { ...question.answers[i], id: i };
-		}
-	}
-
-	const swapArrayElements = (arr, a: number, b: number) => {
-		let _arr = [...arr];
-		let temp = _arr[a];
-		_arr[a] = _arr[b];
-		_arr[b] = temp;
-		return _arr;
-	};
+	const answers = $derived(Array.isArray(question.answers) ? (question.answers as any[]) : []);
+	const range = $derived(
+		!Array.isArray(question.answers) && question.answers
+			? (question.answers as { min: number; max: number })
+			: { min: 0, max: 100 }
+	);
+	let last_text = $state('');
+	let range_value = $state(0);
+	let range_init = false;
 	$effect(() => {
-		set_answer_if_not_set_range(timer_res);
+		if (type === 'RANGE' && !range_init) {
+			range_init = true;
+			const lo = Number(range.min) || 0;
+			const hi = Number(range.max) || 0;
+			range_value = Math.round((hi - lo) / 2 + lo);
+		}
 	});
-	let circular_progress = $derived.by(() => {
-		try {
-			return 1 - ((100 / question.time) * parseInt(timer_res)) / 100;
-		} catch {
-			return 0;
+	// RANGE: when time runs out, the current slider value counts
+	$effect(() => {
+		if (type === 'RANGE' && over && !locked && !time_up) {
+			send({ answer: String(range_value) }, { label: String(range_value) });
 		}
 	});
 
-	const get_div_height = (): string => {
-		if (game_mode === 'normal') {
-			if (question.image) {
-				return '66.666667';
-			} else {
-				return '83.333333';
-			}
-		} else {
-			return '100';
-		}
-	};
-	const default_colors = ['#D6EDC9', '#B07156', '#7F7057', '#4E6E58'];
+	const locked_title = $derived(
+		type === 'VOTING'
+			? 'Vote counted'
+			: type === 'WORD_CLOUD'
+				? locked?.pending
+					? 'Sending'
+					: 'Sent'
+				: 'Locked in'
+	);
 </script>
 
-<div class="h-screen w-screen">
-	{#if game_mode === 'normal'}
-		<div
-			class="flex flex-col justify-start"
-			class:mt-10={[QuizQuestionType.RANGE, QuizQuestionType.ORDER, QuizQuestionType.TEXT]}
-			style="height: {question.image ? '33.333333' : '16.666667'}%"
-		>
-			<h1
-				class="lg:text-2xl text-lg text-center text-black dark:text-white mt-2 break-normal mb-2"
+<svelte:window bind:innerHeight={vh} />
+
+<PhoneShell {world} state={locked ? 'locked' : over ? 'time-up' : 'question'}>
+	<div class="pa-top">
+		<div class="pa-q">
+			<span class="bt-eyebrow pa-eyebrow"
+				>Question{#if question.points === 'double'}<span class="pa-double">Double points</span
+					>{/if}</span
 			>
-				{@html question.question}
-			</h1>
-			{#if question.image !== null && game_mode !== 'kahoot'}
-				<div class="max-h-full">
-					<MediaComponent
-						src={question.image}
-						css_classes="object-cover mx-auto mb-8 max-h-[90%]"
-					/>
-				</div>
-			{/if}
+			<b class="bt-num"
+				>{index + 1}{#if question_count}<span class="pa-of">&nbsp;/ {question_count}</span>{/if}</b
+			>
 		</div>
-	{/if}
-	{#if timer_res !== '0'}
-		{#if question.type === QuizQuestionType.ABCD || question.type === QuizQuestionType.VOTING}
-			<div class="w-full relative h-full" style="height: {get_div_height()}%">
-				<div
-					class="absolute top-0 bottom-0 left-0 right-0 m-auto rounded-full h-fit w-fit border-2 border-black shadow-2xl z-40"
-				>
-					<CircularTimer text={timer_res} progress={circular_progress} color="#ef4444" />
-				</div>
-
-				<div class="grid grid-rows-2 grid-flow-col auto-cols-auto gap-2 w-full p-4 h-full">
-					{#each question.answers as answer, i}
-						<button
-							class="rounded-lg h-full flex align-middle justify-center disabled:opacity-60 p-3 border-2 border-black"
-							style="background-color: {answer.color ??
-								default_colors[i]}; color: {get_foreground_color(
-								answer.color ?? default_colors[i]
-							)}"
-							disabled={selected_answer !== undefined}
-							onclick={() => selectAnswer(answer.answer)}
-						>
-							{#if game_mode === 'kahoot'}
-								<img
-									class="h-2/3 inline-block m-auto"
-									alt="Icon"
-									src={kahoot_icons[i]}
-								/>
-							{:else}
-								<p class="m-auto">{answer.answer}</p>
-							{/if}
-						</button>
-					{/each}
-				</div>
-			</div>
-		{:else if question.type === QuizQuestionType.RANGE}
-			<span
-				class="fixed top-0 bg-red-500 h-8 transition-all"
-				style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
-			></span>
-			{#await import('svelte-range-slider-pips')}
-				<Spinner />
-			{:then c}
-				<div class:pointer-events-none={selected_answer !== undefined} class="mt-24">
-					<c.default
-						bind:values={slider_value}
-						bind:min={question.answers.min}
-						bind:max={question.answers.max}
-						id="pips-slider"
-						pips
-						float
-						all="label"
-					/>
-				</div>
-				<div class="flex justify-center">
-					<div class="w-1/2">
-						<BrownButton onclick={() => selectAnswer(slider_value[0])}
-							>{$t('words.submit')}
-						</BrownButton>
-					</div>
-				</div>
-			{/await}
-		{:else if question.type === QuizQuestionType.TEXT}
-			<div>
-				<span
-					class="fixed top-0 bg-red-500 h-8 transition-all"
-					style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
-				></span>
-				<div class="flex justify-center mt-10">
-					<p class="text-black dark:text-white">Enter your answer</p>
-				</div>
-				<div class="flex justify-center m-2">
-					<input
-						type="text"
-						bind:value={text_input}
-						disabled={selected_answer !== undefined}
-						class="bg-gray-50 focus:ring text-gray-900 rounded-lg focus:ring-blue-500 block w-full p-2 dark:bg-gray-700 dark:text-white dark:focus:ring-blue-500 outline-hidden transition text-center disabled:opacity-50 disabled:cursor-not-allowed"
-					/>
-				</div>
-
-				<div class="flex justify-center mt-2">
-					<div class="w-1/3">
-						<BrownButton
-							type="button"
-							disabled={!text_input || text_input.length === 0}
-							onclick={() => {
-								selectAnswer(text_input);
-							}}
-						>
-							{$t('words.submit')}
-						</BrownButton>
-					</div>
-				</div>
-			</div>
-		{:else if question.type === QuizQuestionType.ORDER}
-			<!--			{#if solution === undefined}
-                            <Spinner />
-                        {:else}-->
-			<span
-				class="fixed top-0 bg-red-500 h-8 transition-all"
-				style="width: {(100 / parseInt(question.time)) * parseInt(timer_res)}vw"
-			></span>
-			<div class="flex flex-col w-full h-full gap-4 px-4 py-6 mt-10">
-				{#each question.answers as answer, i (answer.id)}
-					<div
-						class="w-full h-fit flex-row rounded-lg p-2 align-middle"
-						animate:flip={{ duration: 100 }}
-						style="background-color: {answer.color ?? '#b07156'}"
-					>
-						<button
-							onclick={() => {
-								question.answers = swapArrayElements(question.answers, i, i - 1);
-							}}
-							class="disabled:opacity-50 shadow-lg bg-black/30 w-full flex justify-center rounded-lg p-2 hover:bg-black/20 transition"
-							type="button"
-							aria-label="Move item up"
-							disabled={i === 0 || Boolean(selected_answer)}
-						>
-							<svg
-								class="w-8 h-8"
-								stroke-width="2"
-								viewBox="0 0 24 24"
-								fill="none"
-								xmlns="http://www.w3.org/2000/svg"
-								color="currentColor"
-							>
-								<path
-									d="M12 22a2 2 0 110-4 2 2 0 010 4zM12 15V2m0 0l3 3m-3-3L9 5"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</button>
-						<p class="w-full text-center p-2 text-2xl">{answer.answer}</p>
-
-						<button
-							onclick={() => {
-								question.answers = swapArrayElements(question.answers, i, i + 1);
-							}}
-							class="disabled:opacity-50 shadow-lg bg-black/30 w-full flex justify-center rounded-lg p-2 hover:bg-black/20 transition"
-							type="button"
-							aria-label="Move item down"
-							disabled={i === question.answers.length - 1 || Boolean(selected_answer)}
-						>
-							<svg
-								class="w-8 h-8"
-								stroke-width="2"
-								viewBox="0 0 24 24"
-								fill="none"
-								xmlns="http://www.w3.org/2000/svg"
-								color="currentColor"
-							>
-								<path
-									d="M12 6a2 2 0 110-4 2 2 0 010 4zM12 9v13m0 0l3-3m-3 3l-3-3"
-									stroke="currentColor"
-									stroke-width="2"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-						</button>
-					</div>
-				{/each}
-				<div class="w-full mt-2">
-					<BrownButton
-						type="button"
-						disabled={Boolean(selected_answer)}
-						onclick={() => {
-							select_complex_answer(question.answers);
-						}}>{$t('words.submit')}</BrownButton
-					>
-				</div>
-			</div>
-			<!--{/if}-->
-		{:else if question.type === QuizQuestionType.CHECK}
-			{#await import('./questions/check.svelte')}
-				<Spinner />
-			{:then c}
-				<c.default
-					{question}
-					bind:selected_answer
-					{game_mode}
-					{timer_res}
-					{circular_progress}
-				/>
-				<div class="flex justify-center h-[5%]">
-					<div class="w-1/2">
-						<BrownButton
-							type="button"
-							disabled={selected_answer === undefined}
-							onclick={() => selectAnswer(selected_answer)}
-							>{$t('words.submit')}
-						</BrownButton>
-					</div>
-				</div>
-			{/await}
+		{#if type !== 'SLIDE'}
+			<CircularTimer text={String(seconds_left)} {progress} size={ring_size} />
 		{/if}
+	</div>
+
+	{#if text}
+		<p class="pa-text" class:pa-text-long={text.length > 110}>{text}</p>
 	{/if}
-</div>
+
+	{#if locked}
+		<div class="pl-locked" data-testid="answer-locked" aria-live="polite">
+			{#if locked.index !== undefined && (type === 'ABCD' || type === 'VOTING')}
+				{@const st = answerStyle(locked.index)}
+				<span class="pl-chip {st.className}">
+					<ShapeMark index={locked.index} size={44} />
+				</span>
+			{/if}
+			<span class="bt-kicker pl-kicker">Answer</span>
+			<span class="bt-headline pl-headline">{locked_title}</span>
+			{#if locked.label}
+				<p class="pl-choice">{locked.label}</p>
+			{/if}
+			<p class="pl-wait">
+				{over ? 'Results on the big screen in a moment.' : 'Waiting for the others.'}
+			</p>
+		</div>
+	{:else if type === 'SLIDE'}
+		<div class="pl-locked" data-testid="slide-screen">
+			<span class="bt-kicker pl-kicker">Look at</span>
+			<span class="bt-headline pl-headline">the big screen</span>
+			<p class="pl-wait">Nothing to answer on this one.</p>
+		</div>
+	{:else if over}
+		<div class="pl-locked" data-testid="time-up">
+			<span class="bt-kicker pl-kicker">Time is up</span>
+			<span class="bt-headline pl-headline">No answer</span>
+			<p class="pl-wait">Results on the big screen. Get ready for the next one.</p>
+		</div>
+	{:else if type === 'ABCD' || type === 'VOTING'}
+		<div class="pa-body">
+			<Choice
+				{answers}
+				{shapes}
+				disabled={Boolean(locked)}
+				onpick={(answer, i) =>
+					send({ answer }, { label: shapes ? answerStyle(i).label : answer, index: i })}
+			/>
+		</div>
+	{:else if type === 'CHECK'}
+		<div class="pa-body">
+			<Check
+				{answers}
+				{shapes}
+				disabled={Boolean(locked)}
+				onsubmit={(answer, label) => send({ answer }, { label })}
+			/>
+		</div>
+	{:else if type === 'TEXT' || type === 'WORD_CLOUD'}
+		<TextAnswer
+			error={answer_error}
+			mode={type === 'WORD_CLOUD' ? 'word_cloud' : 'text'}
+			disabled={Boolean(locked)}
+			initial={last_text}
+			onsubmit={(answer) => {
+				last_text = answer;
+				send({ answer }, { label: answer });
+			}}
+		/>
+	{:else if type === 'RANGE'}
+		<RangeAnswer
+			min={range.min}
+			max={range.max}
+			bind:value={range_value}
+			disabled={Boolean(locked)}
+			onsubmit={(answer) => send({ answer }, { label: answer })}
+		/>
+	{:else if type === 'ORDER'}
+		<OrderAnswer
+			{answers}
+			disabled={Boolean(locked)}
+			onsubmit={(ordered, label) => send({ answer: 'a', complex_answer: ordered }, { label })}
+		/>
+	{/if}
+
+	<div class="pa-foot">
+		<b>{username}</b>
+		{#if total_score !== null && total_score !== undefined}
+			<span><span class="pa-tnum">{formatPoints(total_score)}</span> points</span>
+		{/if}
+	</div>
+</PhoneShell>
+
+<style>
+	.pa-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		min-height: 92px;
+	}
+	.pa-q b {
+		display: block;
+		margin-top: 4px;
+		font-size: 44px;
+		line-height: 0.9;
+	}
+	.pa-eyebrow {
+		font-size: 15px;
+	}
+	.pa-double {
+		display: inline-block;
+		margin-left: 10px;
+		padding: 3px 10px;
+		border-radius: 9999px;
+		background: var(--fill-deep);
+		color: var(--accent-green-tint);
+		font-size: 11px;
+		letter-spacing: 2px;
+		vertical-align: 1px;
+	}
+	.pa-of {
+		font-weight: 400;
+		font-size: 26px;
+	}
+	.pa-text {
+		margin: 18px 0 0;
+		font-size: 21px;
+		font-weight: 700;
+		line-height: 1.2;
+		overflow-wrap: anywhere;
+		display: -webkit-box;
+		-webkit-line-clamp: 4;
+		line-clamp: 4;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+	.pa-text-long {
+		font-size: 17px;
+	}
+	.pa-body {
+		flex: 1 1 auto;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		margin-top: 20px;
+	}
+	.pa-foot {
+		margin-top: 16px;
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+		font-size: 15px;
+		color: var(--ink-muted);
+	}
+	.pa-foot b {
+		color: var(--ink);
+		font-weight: 700;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.pa-foot > span {
+		flex: none;
+	}
+	.pa-tnum {
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* locked in, time up, slide */
+	.pl-locked {
+		margin: auto 0;
+		padding: 32px 0;
+	}
+	.pl-chip {
+		width: 88px;
+		height: 88px;
+		justify-content: center;
+		margin-bottom: 28px;
+		animation: pl-in 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+	}
+	@keyframes pl-in {
+		from {
+			transform: scale(0.7);
+			opacity: 0;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.pl-chip {
+			animation: none;
+		}
+	}
+	.pl-kicker {
+		font-size: 20px;
+	}
+	.pl-headline {
+		font-size: 44px;
+		margin-top: 4px;
+	}
+	.pl-choice {
+		margin: 16px 0 0;
+		font-size: 22px;
+		font-weight: 700;
+		overflow-wrap: anywhere;
+	}
+	@media (max-height: 760px) {
+		.pa-top {
+			min-height: 76px;
+		}
+		.pa-q b {
+			font-size: 38px;
+		}
+		.pa-text {
+			margin-top: 12px;
+			font-size: 17px;
+			-webkit-line-clamp: 3;
+			line-clamp: 3;
+		}
+		.pa-body {
+			margin-top: 14px;
+		}
+		.pa-foot {
+			margin-top: 10px;
+		}
+	}
+	.pl-wait {
+		margin: 14px 0 0;
+		font-size: 17px;
+		color: var(--ink-muted);
+	}
+</style>
