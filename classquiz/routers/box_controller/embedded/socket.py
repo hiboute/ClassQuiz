@@ -25,6 +25,9 @@ async def submit_answer_fn(data_answer: int, game_pin: str, player_id: str, now:
     if not game.question_show:
         print("Not showing q")
         return
+    if await redis.get(f"game:{game_pin}:paused") is not None:
+        # The host paused the timer: answers wait for resume_game
+        return
 
     question = game.questions[game.current_question]
     question_time = datetime.fromisoformat(await redis.get(f"game:{game_pin}:current_time"))

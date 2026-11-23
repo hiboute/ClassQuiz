@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: 2025 Marlon W (Mawoka)
 #
 # SPDX-License-Identifier: MPL-2.0
+import asyncio
+import re
+import unicodedata
+
 import aiohttp
 from classquiz.config import settings, redis
 from classquiz.db.models import (
@@ -11,45 +15,31 @@ from classquiz.db.models import (
     VotingQuizAnswer,
     RangeQuizAnswer,
 )
+from classquiz.helpers.profanity import contains_profanity
 from classquiz.socket_server.models import SubmitAnswerData
 from .models import SubmitAnswerDataOrderType
 
 
 async def check_captcha(captcha_data: str) -> bool:
-    async with aiohttp.ClientSession() as session:
-        try:
-            if settings.hcaptcha_key is not None:
-                try:
-                    async with session.post(
-                        "https://hcaptcha.com/siteverify",
-                        data={
-                            "response": captcha_data,
-                            "secret": settings.hcaptcha_key,
-                        },
-                    ) as resp:
-                        resp_data = await resp.model_dump_json()
-                        if not resp_data["success"]:
-                            return
-                except KeyError:
-                    return False
-            elif settings.recaptcha_key is not None:
-                async with session.post(
-                    "https://www.google.com/recaptcha/api/siteverify",
-                    data={
-                        "secret": settings.recaptcha_key,
-                        "response": captcha_data,
-                    },
-                ) as resp:
-                    try:
-                        resp_data = await resp.model_dump_json()
-                        if not resp_data["success"]:
-                            return False
-                    except KeyError:
-                        return False
-        except TypeError:
-            pass
-            return False
-    return True
+    """Verify a captcha token with hCaptcha or reCAPTCHA.
+
+    Returns True when no captcha key is configured (captcha off), False when
+    the provider refuses the token or cannot be reached.
+    """
+    conf = settings()
+    if conf.hcaptcha_key is not None:
+        url, secret = "https://hcaptcha.com/siteverify", conf.hcaptcha_key
+    elif conf.recaptcha_key is not None:
+        url, secret = "https://www.google.com/recaptcha/api/siteverify", conf.recaptcha_key
+    else:
+        return True
+    try:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+            async with session.post(url, data={"response": captcha_data, "secret": secret}) as resp:
+                resp_data = await resp.json(content_type=None)
+    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError):
+        return False
+    return isinstance(resp_data, dict) and resp_data.get("success") is True
 
 
 def check_answer(game_data: PlayGame, data: SubmitAnswerData) -> (bool, str):
@@ -151,3 +141,38 @@ async def mark_answered(game_pin: str, q_index: int, username: str) -> bool:
 async def has_already_answered(game_pin: str, q_index: int, username: str) -> bool:
     """Read-only check, kept for callers that only need to know."""
     return bool(await redis.sismember(answered_key(game_pin, q_index), username))
+
+
+WORD_CLOUD_MIN_LENGTH = 1
+WORD_CLOUD_MAX_LENGTH = 30
+
+
+class WordCloudError(ValueError):
+    """A word cloud submission was refused; `code` is stable for the client."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
+
+def clean_word(value: object) -> tuple[str, str]:
+    """Return (display form, counting key) of a word cloud submission.
+
+    The display form is trimmed with inner whitespace collapsed; the key is
+    also casefolded, so "Paris", " paris " and "PARIS" count as one word.
+    Raises WordCloudError: empty, too_long, invalid_characters, profanity.
+    """
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        raise WordCloudError("invalid_type", "Send your answer as text.")
+    text = unicodedata.normalize("NFC", str(value))
+    if any(unicodedata.category(c) in ("Cc", "Cf", "Co", "Cs") and not c.isspace() for c in text):
+        raise WordCloudError("invalid_characters", "Your answer contains characters that are not allowed.")
+    display = re.sub(r"\s+", " ", text).strip()
+    if len(display) < WORD_CLOUD_MIN_LENGTH:
+        raise WordCloudError("empty", "Type a word before sending.")
+    if len(display) > WORD_CLOUD_MAX_LENGTH:
+        raise WordCloudError("too_long", f"Your answer must be at most {WORD_CLOUD_MAX_LENGTH} characters.")
+    if contains_profanity(display):
+        raise WordCloudError("profanity", "This word is not allowed.")
+    return display, display.casefold()

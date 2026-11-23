@@ -2,6 +2,7 @@
 """Socket handler flow against an in-memory Redis (fakeredis): join, late join,
 lock, answers, streaks, results, leaderboard, kick/ban, podium."""
 
+import asyncio
 import importlib
 import json
 from datetime import datetime, timedelta
@@ -53,6 +54,34 @@ class Harness:
         monkeypatch.setattr(ss.sio, "emit", emit)
         monkeypatch.setattr(ss.sio.manager, "is_connected", lambda sid, ns: True)
 
+        # Background tasks run on the test loop; their sleeps wait on `gate`
+        # (open by default) and are recorded. A sleep also lets the word
+        # cloud throttle window expire, as real time would.
+        self.tasks: list = []
+        self.sleeps: list[float] = []
+        self.gate = asyncio.Event()
+        self.gate.set()
+
+        def start_background_task(fn, *args, **kwargs):
+            task = asyncio.ensure_future(fn(*args, **kwargs))
+            self.tasks.append(task)
+            return task
+
+        async def fake_sleep(seconds):
+            self.sleeps.append(seconds)
+            await self.gate.wait()
+            for key in await self.r.keys("*:wc_throttle"):
+                await self.r.delete(key)
+
+        monkeypatch.setattr(ss.sio, "start_background_task", start_background_task)
+        monkeypatch.setattr(ss, "_countdown_sleep", fake_sleep)
+
+    async def drain(self):
+        """Run the background tasks started so far (and the ones they start)."""
+        while self.tasks:
+            tasks, self.tasks = self.tasks, []
+            await asyncio.gather(*tasks)
+
     def events(self, name, target=None):
         return [(d, t) for e, d, t in self.sent if e == name and (target is None or t == target)]
 
@@ -99,7 +128,8 @@ async def test_full_flow(monkeypatch):
     assert h.events("username_already_exists", "dup")
     assert h.rooms[f"players:{PIN}"] == {"ann", "bob"}
 
-    await ss.start_game("admin", {})
+    # get_ready_seconds 0: questions open at once, as before the get-ready screen
+    await ss.start_game("admin", {"get_ready_seconds": 0})
     await ss.set_question_number("admin", "0")
     # late join during a running question gets start_game + the question
     h.sessions["cid"] = {}

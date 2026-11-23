@@ -97,6 +97,15 @@ not echoed back yet, so trim on the client the same way, or read the
 ### `submit_answer` (C→S)
 - Answers that arrive after the host showed that question's results get
   `question_not_active`.
+- `question_not_active` (S→C, the answering phone) now has a payload:
+  `{"question_index": 3, "reason": "closed"}`. `reason` is one of:
+  - `closed`: not the current question, or its results were shown;
+  - `get_ready`: the get-ready countdown is still running;
+  - `paused`: the host paused the timer;
+  - `not_open`: no answer window is open.
+  It used to have no payload; a listener that takes no argument still works.
+- On a `WORD_CLOUD` question, `answer` is the player's free text (see
+  "Word cloud" below).
 - Scoring:
   - Correct answer: `round(base * (1 - (t/T)/2))`, clamped to
     `[base/2, base]`, where `t` is the answer time and `T` the time limit.
@@ -119,6 +128,31 @@ not echoed back yet, so trim on the client the same way, or read the
 ### `set_question_number` (S→C)
 - `question` now carries `points`: `"standard" | "double" | "none"`. A phone
   can show "Double points!" with it.
+- With the get-ready screen on (the default), it arrives `seconds` after
+  `get_ready`, at the moment the answer window opens. Start the phone and host
+  timers on this event, as today.
+
+### `set_question_number` (C→S, host): new optional payload
+- Still accepted: the question index as a string or number (`"2"`).
+- New: `{"question_index": 2, "get_ready_seconds": 0}`. `get_ready_seconds`
+  is optional and overrides the game's setting for this question only
+  (0 = open at once, no `get_ready`).
+- An index out of range now gets `error` (it used to crash the handler).
+- Ignored after `end_game_now`.
+
+### `start_game` (C→S, host): new optional payload
+- `{"get_ready_seconds": 3}`, optional. Whole seconds, clamped to 0..10;
+  0 disables the get-ready screen for the whole game. Without it the game uses
+  3. `{}` or no payload works as before.
+
+### `join_game` (C→S): captcha is now really checked
+- The captcha check was never awaited, so it always passed. It is now
+  awaited. It only applies when the game has `captcha_enabled` **and** the
+  phone sends a `captcha` value **and** the server has an hCaptcha or
+  reCAPTCHA key. With no key configured (our deploy) it always passes.
+- A refused captcha gets **`captcha_invalid`** (S→C, the joining phone):
+  `{"message": "The captcha check failed. Try again."}`. It used to end the
+  join silently.
 
 ---
 
@@ -218,6 +252,119 @@ Sent when the host emits `get_final_results`, after `final_results`.
 
 ---
 
+### `get_ready` (S→C, host + remote + phones, `<pin>` room)
+Sent when the host sets a question (`set_question_number`), before the
+question itself, unless the delay is 0 or the question is a slide.
+```json
+{"question_index": 2, "question_count": 10, "title": "Capital of France?",
+ "type": "ABCD", "points": "double", "seconds": 3, "image": "/api/v1/storage/..."}
+```
+- `image` is only present when the question has one. `type` is a
+  `QuizQuestionType` value, `points` is `standard | double | none`.
+- Show a "Get ready" screen with a `seconds` countdown. Nobody can answer
+  yet: `submit_answer` gets `question_not_active` with `reason: "get_ready"`,
+  and the scoring clock has not started.
+- After `seconds`, the server sends `set_question_number` as usual and starts
+  the answer window then, so a fast answer still gets the full points.
+- If the host sets another question (or ends the game) during the countdown,
+  the old countdown is dropped: only the latest question opens.
+- One emit to the `<pin>` room reaches the phones and the host screens (the
+  host and remote are in that room too), so it is not sent twice.
+
+### Pause / resume / end now (host only)
+
+#### `pause_game` (C→S, host or remote)
+- Payload: none or `{}`. Ignored when it comes from a phone.
+- Freezes the timer of the open question. The server stores the remaining
+  seconds; answers get `question_not_active` with `reason: "paused"` until
+  resume. The box controller buttons are refused too.
+- Refused with **`pause_refused`** (S→C, the sender):
+  `{"reason": "get_ready" | "no_open_question" | "already_paused"}`.
+
+#### `resume_game` (C→S, host or remote)
+- Payload: none or `{}`. Restarts the timer where it stopped: the scoring
+  clock does not count the paused time.
+- Refused with `pause_refused` `{"reason": "not_paused"}` when not paused.
+
+#### `game_paused` / `game_resumed` (S→C, host + remote + phones, `<pin>` room)
+- Payload: `{"question_index": 3, "remaining": 14.6}` (seconds, one decimal).
+- `game_paused`: stop the countdown and show "Paused". `game_resumed`:
+  restart the countdown from `remaining`. Both carry the same value.
+- A phone that joins late during a pause gets `game_paused` right after
+  `set_question_number`.
+- Showing the results (`get_question_results`) or setting another question
+  clears a pause; no `game_resumed` is sent then.
+
+#### `end_game_now` (C→S, host or remote)
+- Payload: none or `{}`. Ends the game at once, from any state (lobby,
+  get-ready, open question, results): cancels a running countdown, closes the
+  current question (later answers get `question_not_active`), then sends, in
+  order: `game_ended`, `final_results`, `podium` (same payloads as
+  `get_final_results`). Later `set_question_number` calls are ignored.
+- Answers already given count; the open question's results are not shown.
+
+#### `game_ended` (S→C, host + remote + phones, `<pin>` room)
+- Payload: `{"reason": "host"}`. Sent only by `end_game_now`, just before
+  `final_results` and `podium`.
+
+### Word cloud
+
+New question type **`WORD_CLOUD`** (`QuizQuestionType`). Editor payload:
+```json
+{"question": "One word for Monday?", "time": "30", "type": "WORD_CLOUD",
+ "answers": [], "image": null, "points": "none"}
+```
+- `answers` is ignored and stored as `[]` (`""` or `null` are accepted too).
+- `points` is ignored: a word cloud never awards points and never changes a
+  streak. It is not a Postgres enum (questions are stored as JSON), so **no
+  migration**.
+- Phones get `set_question_number` with `question.type: "WORD_CLOUD"` and
+  `question.answers: []`: show a text field (max 30 characters).
+
+#### Submitting (C→S, phone): `submit_answer`
+- `{"question_index": 4, "answer": "Pizza"}`. Same event as the other types.
+- The text is trimmed and inner whitespace collapsed, then must be 1 to 30
+  characters, without control characters, and pass the profanity filter
+  (same list as nicknames).
+- One accepted word per player per question; a second one gets
+  `already_replied`. A refused word does not count: the player can try again.
+- Counts as an answer for `player_answer` and `everyone_answered`.
+
+#### `word_cloud_accepted` (S→C, the submitting phone)
+- `{"question_index": 4, "text": "Pizza"}`: the cleaned text as stored. This is
+  the phone's only "result": show "Sent!".
+
+#### `word_cloud_refused` (S→C, the submitting phone)
+```json
+{"question_index": 4, "code": "too_long",
+ "message": "Your answer must be at most 30 characters.", "max_length": 30}
+```
+- `code`: `empty`, `too_long`, `invalid_characters`, `profanity` or
+  `invalid_type`. `message` is English, ready to display.
+
+#### `word_cloud_update` (S→C, host + remote, `admin:<pin>`)
+```json
+{"question_index": 4, "total": 57,
+ "words": [{"text": "Pizza", "count": 12}, {"text": "Coffee", "count": 9}]}
+```
+- `words`: at most 60, most frequent first (ties alphabetical). Words are
+  counted case-insensitively with whitespace collapsed ("pizza", " PIZZA "
+  count as one); `text` is the spelling of the first player who sent it.
+- `total`: number of accepted submissions.
+- Live while players answer, **at most 2 per second** per question across all
+  workers: the first word of a 500 ms window is sent at once, later words of
+  the window in one update at its end, so the last word is never missed.
+- Sent once more, not throttled, with the final state when the host emits
+  `get_question_results` for the question (before `question_results`).
+
+#### Results
+- `question_results` (host) lists the submissions as `AnswerData` with
+  `answer` = the text, `right: false`, `score: 0`. Phones get their own entry
+  as for other types, and `rank_update` with `gained: 0` and an unchanged
+  streak. The phone can ignore both and keep its "Sent!" screen.
+
+---
+
 ## Quiz data: `points` per question
 
 `QuizQuestion.points`: `"standard"` (1000, the default), `"double"` (2000) or
@@ -237,3 +384,18 @@ Sent when the host emits `get_final_results`, after `final_results`.
 | `game_session:<pin>:banned` | SET | kicked usernames, casefolded |
 | `game_session:<pin>:locked` | STRING | `"1"` while locked |
 | `game_session:<pin>:<q>:closed` | STRING | set when question q's results were shown |
+| `game:<pin>:question_token` | STRING | random token, changed on each `set_question_number` and on `end_game_now` (cancels a stale countdown) |
+| `game:<pin>:get_ready` | STRING | index of the question in its get-ready countdown |
+| `game:<pin>:paused` | STRING | JSON `{question_index, remaining}` while paused |
+| `game:<pin>:ended` | STRING | `"1"` after `end_game_now` |
+| `game_session:<pin>:<q>:wc_counts` | ZSET | word key (casefolded) → count |
+| `game_session:<pin>:<q>:wc_display` | HASH | word key → first spelling |
+| `game_session:<pin>:<q>:wc_total` | STRING | accepted submissions |
+| `game_session:<pin>:<q>:wc_throttle` / `wc_trailing` | STRING | rate limit of `word_cloud_update` (expire in 0.5 s / 10 s) |
+
+`game:<pin>:current_time` (the question start used for scoring) is now
+removed when a get-ready countdown starts and set when the answer window
+opens; a resume moves it forward by the paused time.
+
+`PlayGame` (the `game:<pin>` JSON) has a new field `get_ready_seconds`
+(default 3), so `registered_as_admin` and `joined_game` carry it too.

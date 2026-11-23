@@ -24,12 +24,14 @@ from classquiz.db.models import (
     AnswerData,
 )
 from pydantic import BaseModel, ValidationError
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from classquiz.helpers.nickname import NicknameError, random_nickname
 from classquiz.socket_server.helpers import (
+    WordCloudError,
     check_answer,
     check_captcha,
+    clean_word,
     mark_answered,
 )
 from classquiz.socket_server.scoring import (
@@ -104,9 +106,82 @@ def _closed_key(game_pin: str, q_index: int) -> str:
     return f"game_session:{game_pin}:{q_index}:closed"
 
 
+def _current_time_key(game_pin: str) -> str:
+    # ISO start time of the open question's answer window (used for scoring)
+    return f"game:{game_pin}:current_time"
+
+
+def _question_token_key(game_pin: str) -> str:
+    # Changes every time the host sets a question or ends the game, so a
+    # get-ready countdown that is no longer current does nothing.
+    return f"game:{game_pin}:question_token"
+
+
+def _get_ready_key(game_pin: str) -> str:
+    # Index of the question whose get-ready countdown is running
+    return f"game:{game_pin}:get_ready"
+
+
+def _paused_key(game_pin: str) -> str:
+    # JSON {question_index, remaining} while the host has paused the timer
+    return f"game:{game_pin}:paused"
+
+
+def _ended_key(game_pin: str) -> str:
+    # "1" once the host ended the game with end_game_now
+    return f"game:{game_pin}:ended"
+
+
+def _wc_key(game_pin: str, q_index: int, part: str) -> str:
+    # Word cloud keys of question q: counts (ZSET), display (HASH), total,
+    # throttle and trailing (rate limit of word_cloud_update)
+    return f"game_session:{game_pin}:{q_index}:wc_{part}"
+
+
+DEFAULT_GET_READY_SECONDS = 3
+MAX_GET_READY_SECONDS = 10
+WORD_CLOUD_TOP = 60
+WORD_CLOUD_THROTTLE_MS = 500  # at most 2 word_cloud_update per second
+
+# Keeps a reference to running background tasks (asyncio only holds weak ones)
+_background_tasks: set = set()
+
+
+async def _countdown_sleep(seconds: float) -> None:
+    """Wait without blocking the event loop (a function so tests can patch it)."""
+    await asyncio.sleep(seconds)
+
+
+def _start_background(coro_fn, *args) -> None:
+    task = sio.start_background_task(coro_fn, *args)
+    if task is not None:
+        _background_tasks.add(task)
+        add_done_callback = getattr(task, "add_done_callback", None)
+        if add_done_callback is not None:
+            add_done_callback(_background_tasks.discard)
+
+
+def _clean_get_ready_seconds(value, default: int = DEFAULT_GET_READY_SECONDS) -> int:
+    """0..10 whole seconds; anything invalid falls back to `default`."""
+    if value is None or isinstance(value, bool):
+        return default
+    try:
+        seconds = int(float(value))
+    except (TypeError, ValueError):
+        return default
+    return min(MAX_GET_READY_SECONDS, max(0, seconds))
+
+
+def _time_limit_s(question) -> float:
+    try:
+        return max(0.0, float(question.time))
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def _is_gradable(question) -> bool:
-    """Questions with a right answer (voting and slides have none)."""
-    return question.type not in (QuizQuestionType.VOTING, QuizQuestionType.SLIDE)
+    """Questions with a right answer (voting, slides and word clouds have none)."""
+    return question.type not in (QuizQuestionType.VOTING, QuizQuestionType.SLIDE, QuizQuestionType.WORD_CLOUD)
 
 
 async def _emit_to_sid(event: str, data, sid: str) -> None:
@@ -193,11 +268,13 @@ async def record_answer(
     answer_right: bool,
     answer: str,
     time_taken_ms: float,
+    word_key: str | None = None,
 ) -> AnswerData | None:
     """Score and store one answer, update streak and leaderboard, notify the host.
 
     Returns None when the player had already answered this question.
-    Shared by the Socket.IO players and the box controller.
+    Shared by the Socket.IO players and the box controller. `word_key` is the
+    counting key of a word cloud answer (`answer` is then its display form).
     """
     if not await mark_answered(game_pin, question_index, username):
         return None
@@ -231,6 +308,8 @@ async def record_answer(
         streak_bonus=bonus,
     )
     answer_count = await set_answer(game_pin=game_pin, q_index=question_index, data=answer_data)
+    if word_key is not None:
+        await _add_word(game_pin, question_index, word_key, answer)
     player_count = await redis.scard(f"game_session:{game_pin}:players")
     # Only the host screens count answers; this used to go to every socket.
     await sio.emit(
@@ -341,8 +420,9 @@ async def join_game(sid: str, data: dict):
         return
     # +++ START checking captcha +++
     if game_data.captcha_enabled and d.captcha is not None:
-        captcha_res = check_captcha(d.captcha)
-        if not captcha_res:
+        # check_captcha passes when no captcha key is configured (captcha off)
+        if not await check_captcha(d.captcha):
+            await sio.emit("captcha_invalid", {"message": "The captcha check failed. Try again."}, room=sid)
             return
     # --- END checking captcha ---
     # SET NX claims the nickname atomically: two phones can't both get it.
@@ -398,6 +478,9 @@ async def join_game(sid: str, data: dict):
             and game_data.questions[q_index].type != QuizQuestionType.SLIDE
         ):
             await sio.emit("set_question_number", _question_payload(game_data, q_index), room=sid)
+            paused = await redis.get(_paused_key(d.game_pin))
+            if paused is not None:
+                await sio.emit("game_paused", json.loads(paused), room=sid)
 
 
 class _RandomNicknameInput(BaseModel):
@@ -421,12 +504,15 @@ async def get_random_nickname(sid: str, data: dict | None = None):
 
 
 @sio.event
-async def start_game(sid: str, _data: dict):
+async def start_game(sid: str, data: dict | None = None):
     session = await get_session(sid, sio)
     if not session["admin"]:
         return
     game_data = await PlayGame.get_from_redis(session["game_pin"])
     game_data.started = True
+    if isinstance(data, dict) and "get_ready_seconds" in data:
+        # Optional: get-ready delay of every question of this game (0 disables)
+        game_data.get_ready_seconds = _clean_get_ready_seconds(data["get_ready_seconds"])
     await game_data.save(session["game_pin"])
     await redis.delete(f"game_in_lobby:{game_data.user_id.hex}")
     await sio.emit("start_game", room=session["game_pin"])
@@ -525,6 +611,13 @@ async def get_question_results(sid: str, data: dict):
     await game_data.save(game_pin)
     # The question is over: refuse answers that arrive from now on.
     await redis.set(_closed_key(game_pin, question_index), "1", ex=KEY_TTL)
+    await redis.delete(_paused_key(game_pin))
+    if (
+        0 <= question_index < len(game_data.questions)
+        and game_data.questions[question_index].type == QuizQuestionType.WORD_CLOUD
+    ):
+        # Final state of the cloud, not throttled
+        await _emit_word_cloud(game_pin, question_index)
     if 0 <= question_index < len(game_data.questions) and _is_gradable(game_data.questions[question_index]):
         # No answer resets the streak, like a wrong one.
         answered = {a.username for a in answer_data_list}
@@ -538,33 +631,108 @@ async def get_question_results(sid: str, data: dict):
     await _emit_rank_updates(game_pin, question_index, answer_data_list)
 
 
+def _parse_set_question(data) -> tuple[int, object]:
+    """(question index, optional get_ready_seconds) from the host's payload.
+
+    The payload is the question index as a str or number (as before), or
+    {"question_index": 2, "get_ready_seconds": 3}.
+    """
+    if isinstance(data, dict):
+        raw = data.get("question_index", data.get("question_number"))
+        return int(float(raw)), data.get("get_ready_seconds")
+    return int(float(data)), None
+
+
+def _get_ready_payload(game_data: PlayGame, index: int, seconds: int) -> dict:
+    question = game_data.questions[index]
+    payload = {
+        "question_index": index,
+        "question_count": len(game_data.questions),
+        "title": question.question,
+        "type": (question.type or QuizQuestionType.ABCD).value,
+        "points": getattr(question.points, "value", question.points),
+        "seconds": seconds,
+    }
+    if question.image:
+        payload["image"] = question.image
+    return payload
+
+
+async def _open_question(game_pin: str, game_data: PlayGame, q_index: int, host_sid: str | None = None) -> None:
+    """Open the answer window of question q_index now and send it out."""
+    game_data.current_question = q_index
+    game_data.question_show = True
+    await game_data.save(game_pin)
+    await redis.set(_current_time_key(game_pin), datetime.now().isoformat(), ex=KEY_TTL)
+    await redis.delete(_get_ready_key(game_pin))
+    if game_data.questions[q_index].type == QuizQuestionType.SLIDE:
+        await sio.emit("set_question_number", {"question_index": q_index}, room=host_sid or _admin_room(game_pin))
+        return
+    await sio.emit("set_question_number", _question_payload(game_data, q_index), room=game_pin)
+
+
+def _as_str(value) -> str | None:
+    return value.decode() if isinstance(value, bytes) else value
+
+
+async def _open_after_get_ready(game_pin: str, q_index: int, token: str, seconds: int) -> None:
+    """Background task: wait out the get-ready screen, then open the question."""
+    try:
+        await _countdown_sleep(seconds)
+        # The host moved on (or ended the game) during the countdown: do nothing.
+        if _as_str(await redis.get(_question_token_key(game_pin))) != token:
+            return
+        if await redis.get(_ended_key(game_pin)) is not None:
+            return
+        game_data = await PlayGame.get_from_redis(game_pin)
+        if game_data.current_question != q_index:
+            return
+        await _open_question(game_pin, game_data, q_index)
+    except Exception as e:  # a background task has nobody to report to
+        print(f"get_ready task failed for {game_pin}/{q_index}: {e!r}")
+
+
 @sio.event
-async def set_question_number(sid: str, data: str):
-    # data is just a number (as a str) of the question
+async def set_question_number(sid: str, data):
+    # data is the question index (str or number), or a dict with
+    # question_index and an optional get_ready_seconds for this question.
     session = await get_session(sid, sio)
     if not session["admin"]:
         return
     game_pin = session["game_pin"]
-    q_index = int(float(data))
-    game_data = await PlayGame.get_from_redis(session["game_pin"])
-    game_data.current_question = q_index
-    game_data.question_show = True
-    await game_data.save(session["game_pin"])
-    await redis.set(f"game:{session['game_pin']}:current_time", datetime.now().isoformat(), ex=7200)
-    if game_data.questions[q_index].type == QuizQuestionType.SLIDE:
-        await sio.emit(
-            "set_question_number",
-            {
-                "question_index": q_index,
-            },
-            room=sid,
-        )
+    try:
+        q_index, seconds_raw = _parse_set_question(data)
+    except (TypeError, ValueError):
+        await sio.emit("error", room=sid)
         return
-    await sio.emit(
-        "set_question_number",
-        _question_payload(game_data, q_index),
-        room=game_pin,
-    )
+    game_data = await PlayGame.get_from_redis(game_pin)
+    if not 0 <= q_index < len(game_data.questions):
+        await sio.emit("error", room=sid)
+        return
+    if await redis.get(_ended_key(game_pin)) is not None:
+        return
+    seconds = _clean_get_ready_seconds(seconds_raw, _clean_get_ready_seconds(game_data.get_ready_seconds))
+    token = os.urandom(8).hex()
+    await redis.set(_question_token_key(game_pin), token, ex=KEY_TTL)
+    await redis.delete(_paused_key(game_pin), _get_ready_key(game_pin))
+    if seconds == 0 or game_data.questions[q_index].type == QuizQuestionType.SLIDE:
+        # No get-ready screen: open at once, as before
+        await _open_question(game_pin, game_data, q_index, host_sid=sid)
+        return
+    # Get ready: nobody can answer until the countdown is over. The previous
+    # start time is removed so it cannot be used to score this question.
+    game_data.current_question = q_index
+    game_data.question_show = False
+    await game_data.save(game_pin)
+    await redis.delete(_current_time_key(game_pin))
+    await redis.set(_get_ready_key(game_pin), str(q_index), ex=KEY_TTL)
+    # The game room holds the phones and the host screens (admin room) alike.
+    await sio.emit("get_ready", _get_ready_payload(game_data, q_index, seconds), room=game_pin)
+    _start_background(_open_after_get_ready, game_pin, q_index, token, seconds)
+
+
+async def _question_not_active(sid: str, question_index: int, reason: str) -> None:
+    await sio.emit("question_not_active", {"question_index": question_index, "reason": reason}, room=sid)
 
 
 @sio.event
@@ -576,6 +744,7 @@ async def submit_answer(sid: str, data: dict):
         await sio.emit("error", room=sid)
         print(e)
         return
+    raw_answer = d.answer
     d.answer = str(d.answer)
     session = await get_session(sid, sio)
     if "username" not in session:
@@ -585,17 +754,32 @@ async def submit_answer(sid: str, data: dict):
     game_data = await PlayGame.get_from_redis(game_pin)
 
     if question_index != game_data.current_question or await redis.get(_closed_key(game_pin, question_index)):
-        await sio.emit("question_not_active", room=sid)
+        await _question_not_active(sid, question_index, "closed")
         return
-    started_raw = await redis.get(f"game:{game_pin}:current_time")
+    if await redis.get(_get_ready_key(game_pin)) is not None:
+        # Still on the get-ready screen: the answer window is not open yet
+        await _question_not_active(sid, question_index, "get_ready")
+        return
+    if await redis.get(_paused_key(game_pin)) is not None:
+        await _question_not_active(sid, question_index, "paused")
+        return
+    started_raw = await redis.get(_current_time_key(game_pin))
     if started_raw is None:
-        await sio.emit("question_not_active", room=sid)
+        await _question_not_active(sid, question_index, "not_open")
+        return
+    time_q_started = datetime.fromisoformat(_as_str(started_raw))
+    if time_q_started > now:
+        await _question_not_active(sid, question_index, "get_ready")
+        return
+
+    latency = int(float(session.get("ping", 0)))
+    diff = (time_q_started - now).total_seconds() * 1000  # - timedelta(milliseconds=latency)
+    time_taken_ms = abs(diff) - latency
+    if game_data.questions[question_index].type == QuizQuestionType.WORD_CLOUD:
+        await _submit_word(sid, session["username"], game_pin, game_data, question_index, raw_answer, time_taken_ms)
         return
 
     answer_right, answer = check_answer(game_data, d)
-    latency = int(float(session.get("ping", 0)))
-    time_q_started = datetime.fromisoformat(started_raw)
-    diff = (time_q_started - now).total_seconds() * 1000  # - timedelta(milliseconds=latency)
     answer_data = await record_answer(
         game_pin=game_pin,
         game_data=game_data,
@@ -603,10 +787,186 @@ async def submit_answer(sid: str, data: dict):
         username=session["username"],
         answer_right=answer_right,
         answer=answer,
-        time_taken_ms=abs(diff) - latency,
+        time_taken_ms=time_taken_ms,
     )
     if answer_data is None:
         await sio.emit("already_replied", room=sid)
+
+
+# --- Word cloud ---
+
+
+async def _submit_word(
+    sid: str, username: str, game_pin: str, game_data: PlayGame, q_index: int, raw, time_taken_ms: float
+) -> None:
+    """One free-text word per player: no points, no streak change."""
+    try:
+        display, key = clean_word(raw)
+    except WordCloudError as e:
+        # Refused words do not count as the player's answer: they can retry.
+        await sio.emit(
+            "word_cloud_refused",
+            {"question_index": q_index, "code": e.code, "message": e.message, "max_length": 30},
+            room=sid,
+        )
+        return
+    answer_data = await record_answer(
+        game_pin=game_pin,
+        game_data=game_data,
+        question_index=q_index,
+        username=username,
+        answer_right=False,
+        answer=display,
+        time_taken_ms=time_taken_ms,
+        word_key=key,
+    )
+    if answer_data is None:
+        await sio.emit("already_replied", room=sid)
+        return
+    await sio.emit("word_cloud_accepted", {"question_index": q_index, "text": display}, room=sid)
+    await _word_cloud_changed(game_pin, q_index)
+
+
+async def _add_word(game_pin: str, q_index: int, key: str, display: str) -> None:
+    async with redis.pipeline(transaction=False) as pipe:
+        pipe.zincrby(_wc_key(game_pin, q_index, "counts"), 1, key)
+        # The first player's spelling is the one shown
+        pipe.hsetnx(_wc_key(game_pin, q_index, "display"), key, display)
+        pipe.incr(_wc_key(game_pin, q_index, "total"))
+        for part in ("counts", "display", "total"):
+            pipe.expire(_wc_key(game_pin, q_index, part), KEY_TTL)
+        await pipe.execute()
+
+
+async def _word_cloud_snapshot(game_pin: str, q_index: int) -> dict:
+    top = await redis.zrevrange(_wc_key(game_pin, q_index, "counts"), 0, WORD_CLOUD_TOP - 1, withscores=True)
+    keys = [_as_str(k) for k, _ in top]
+    displays = await redis.hmget(_wc_key(game_pin, q_index, "display"), keys) if keys else []
+    words = [
+        {"text": _as_str(display) or key, "count": int(count)} for key, (_, count), display in zip(keys, top, displays)
+    ]
+    words.sort(key=lambda w: (-w["count"], w["text"].casefold()))
+    total = int(await redis.get(_wc_key(game_pin, q_index, "total")) or 0)
+    return {"question_index": q_index, "words": words, "total": total}
+
+
+async def _emit_word_cloud(game_pin: str, q_index: int) -> None:
+    await sio.emit("word_cloud_update", await _word_cloud_snapshot(game_pin, q_index), room=_admin_room(game_pin))
+
+
+async def _word_cloud_changed(game_pin: str, q_index: int) -> None:
+    """Send word_cloud_update at most every 500 ms per question, on all workers.
+
+    The first word of a window is sent at once (the throttle key is taken
+    with SET NX PX). Words that arrive while it is held are sent by one
+    trailing task at the end of the window, so the host never misses the last
+    words.
+    """
+    throttle = _wc_key(game_pin, q_index, "throttle")
+    if await redis.set(throttle, "1", px=WORD_CLOUD_THROTTLE_MS, nx=True):
+        await _emit_word_cloud(game_pin, q_index)
+    elif await redis.set(_wc_key(game_pin, q_index, "trailing"), "1", px=10_000, nx=True):
+        _start_background(_word_cloud_trailing, game_pin, q_index)
+
+
+async def _word_cloud_trailing(game_pin: str, q_index: int) -> None:
+    throttle = _wc_key(game_pin, q_index, "throttle")
+    trailing = _wc_key(game_pin, q_index, "trailing")
+    try:
+        for _ in range(20):
+            wait_ms = await redis.pttl(throttle)
+            if wait_ms > 0:
+                await _countdown_sleep(wait_ms / 1000)
+            if await redis.set(throttle, "1", px=WORD_CLOUD_THROTTLE_MS, nx=True):
+                # Released before the snapshot is read: a word stored after
+                # this starts a new trailing task, so it is not lost.
+                await redis.delete(trailing)
+                await _emit_word_cloud(game_pin, q_index)
+                return
+    except Exception as e:
+        print(f"word cloud task failed for {game_pin}/{q_index}: {e!r}")
+    await redis.delete(trailing)
+
+
+# --- Pause / resume / end now (host only) ---
+
+
+async def _admin_game_pin(sid: str) -> str | None:
+    session = await get_session(sid, sio)
+    if not session.get("admin"):
+        return None
+    return session["game_pin"]
+
+
+@sio.event
+async def pause_game(sid: str, _data: dict | None = None):
+    """Freeze the timer of the open question; answers are refused until resume."""
+    game_pin = await _admin_game_pin(sid)
+    if game_pin is None:
+        return
+    game_data = await PlayGame.get_from_redis(game_pin)
+    q_index = game_data.current_question
+    started_raw = await redis.get(_current_time_key(game_pin))
+    reason = None
+    if not 0 <= q_index < len(game_data.questions) or game_data.questions[q_index].type == QuizQuestionType.SLIDE:
+        reason = "no_open_question"
+    elif await redis.get(_get_ready_key(game_pin)) is not None:
+        reason = "get_ready"
+    elif not game_data.question_show or started_raw is None or await redis.get(_closed_key(game_pin, q_index)):
+        reason = "no_open_question"
+    elif await redis.get(_paused_key(game_pin)) is not None:
+        reason = "already_paused"
+    if reason is not None:
+        await sio.emit("pause_refused", {"reason": reason}, room=sid)
+        return
+    elapsed = (datetime.now() - datetime.fromisoformat(_as_str(started_raw))).total_seconds()
+    remaining = round(max(0.0, _time_limit_s(game_data.questions[q_index]) - elapsed), 1)
+    payload = {"question_index": q_index, "remaining": remaining}
+    await redis.set(_paused_key(game_pin), json.dumps(payload), ex=KEY_TTL)
+    await sio.emit("game_paused", payload, room=game_pin)
+
+
+@sio.event
+async def resume_game(sid: str, _data: dict | None = None):
+    """Restart the timer where it was frozen."""
+    game_pin = await _admin_game_pin(sid)
+    if game_pin is None:
+        return
+    raw = await redis.get(_paused_key(game_pin))
+    if raw is None:
+        await sio.emit("pause_refused", {"reason": "not_paused"}, room=sid)
+        return
+    paused = json.loads(raw)
+    await redis.delete(_paused_key(game_pin))
+    game_data = await PlayGame.get_from_redis(game_pin)
+    q_index = paused["question_index"]
+    if q_index != game_data.current_question or not 0 <= q_index < len(game_data.questions):
+        return
+    # Move the start time so the elapsed time is what it was at the pause:
+    # scoring and the remaining time carry on from there.
+    elapsed = max(0.0, _time_limit_s(game_data.questions[q_index]) - float(paused["remaining"]))
+    new_start = datetime.now() - timedelta(seconds=elapsed)
+    await redis.set(_current_time_key(game_pin), new_start.isoformat(), ex=KEY_TTL)
+    await sio.emit("game_resumed", paused, room=game_pin)
+
+
+@sio.event
+async def end_game_now(sid: str, _data: dict | None = None):
+    """Stop the game at once and show the final podium."""
+    game_pin = await _admin_game_pin(sid)
+    if game_pin is None:
+        return
+    await redis.set(_ended_key(game_pin), "1", ex=KEY_TTL)
+    # A new token cancels a running get-ready countdown
+    await redis.set(_question_token_key(game_pin), os.urandom(8).hex(), ex=KEY_TTL)
+    await redis.delete(_paused_key(game_pin), _get_ready_key(game_pin))
+    game_data = await PlayGame.get_from_redis(game_pin)
+    if 0 <= game_data.current_question < len(game_data.questions):
+        await redis.set(_closed_key(game_pin, game_data.current_question), "1", ex=KEY_TTL)
+    game_data.question_show = False
+    await game_data.save(game_pin)
+    await sio.emit("game_ended", {"reason": "host"}, room=game_pin)
+    await _send_final_results(game_pin)
 
 
 @sio.event
@@ -614,7 +974,10 @@ async def get_final_results(sid: str, _data: dict):
     session: dict = await get_session(sid, sio)
     if not session["admin"]:
         return
-    game_pin = session["game_pin"]
+    await _send_final_results(session["game_pin"])
+
+
+async def _send_final_results(game_pin: str) -> None:
     game_data = await PlayGame.get_from_redis(game_pin)
     results = await generate_final_results(game_data, game_pin)
     # The full per-question results only go to the host screens; phones only

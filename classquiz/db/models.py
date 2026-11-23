@@ -180,6 +180,10 @@ class QuizQuestionType(str, Enum):
     TEXT = "TEXT"
     ORDER = "ORDER"
     CHECK = "CHECK"
+    # Players type a short free text; the host sees a live word cloud. No
+    # points, no streak change. Stored in the quiz's questions JSON, so no
+    # migration is needed (the type is not a Postgres enum).
+    WORD_CLOUD = "WORD_CLOUD"
 
 
 class TextQuizAnswer(BaseModel):
@@ -217,6 +221,15 @@ class QuizQuestion(BaseModel):
         if isinstance(v, QuestionPoints):
             return v
         return QuestionPoints.STANDARD
+
+    @field_validator("answers", mode="before")
+    @classmethod
+    def word_cloud_has_no_answers(cls, v: object, info: ValidationInfo) -> object:
+        # A word cloud has no predefined answers: whatever the editor sends
+        # (null, "" or a list) is stored as an empty list.
+        if info.data.get("type") == QuizQuestionType.WORD_CLOUD:
+            return []
+        return v
 
     @field_validator("answers")
     def answers_not_none_if_abcd_type(cls, v, info: ValidationInfo):
@@ -323,6 +336,9 @@ class PlayGame(BaseModel):
     background_image: str | None = None
     custom_field: str | None = None
     question_show: bool = False
+    # Seconds of the "get ready" screen before each question's answer window
+    # opens (0 disables it). Set by the host with `start_game`.
+    get_ready_seconds: int = 3
 
     # This is what the host and player screens put into style="...": quizzes
     # stored before colours were validated are cleaned here too.
