@@ -86,8 +86,27 @@ not echoed back yet, so trim on the client the same way, or read the
 `random_nickname` value.
 
 ### `rejoin_game` (C→S)
+- Payload: `{game_pin, username, old_sid?, rejoin_token?}`.
 - A kicked player who reloads with the old cookie now gets `kick` again,
   instead of rejoining.
+- Accepted when `old_sid` is the socket the server holds for this nickname
+  (a plain reconnect), or when `rejoin_token` matches the secret the phone got
+  in `joined_game` (the server still holds a stale socket of the same phone,
+  e.g. a reload that raced a reconnect: the old socket leaves the rooms). A
+  second rejoin from the socket that already rejoined is answered again.
+- Anything else gets **`rejoin_failed`** (S→C, the sender), never silence:
+  `{"reason": "unknown_player" | "stale_session" | "game_not_found" | "invalid",
+  "message": "..."}` (English, ready to display). `game_not_found` still comes
+  first for a game that is gone. The phone clears its cookie and shows the
+  join form with the message.
+- `rejoined_game` carries `username` and `rejoin_token` (keep the token).
+- If a question is open, the rejoining phone then gets `set_question_number`
+  again (see below), plus `game_paused` during a pause.
+
+### `joined_game` / `rejoined_game` (S→C)
+- Same player data as before (an object, not a list), plus `username` (as
+  stored, trimmed) and `rejoin_token` (32 hex characters). The phone keeps
+  the token (cookie `joined_game`) and sends it with `rejoin_game`.
 
 ### `kick_player` (C→S, host only)
 - Also bans the nickname, case-insensitively, for the rest of the game (Redis
@@ -128,6 +147,11 @@ not echoed back yet, so trim on the client the same way, or read the
 ### `set_question_number` (S→C)
 - `question` now carries `points`: `"standard" | "double" | "none"`. A phone
   can show "Double points!" with it.
+- Sent to one phone that joins late or rejoins while the question is open,
+  it also carries `remaining` (seconds left, one decimal: start the timer from
+  it, not from `question.time`) and, on a rejoin, `already_answered`
+  (true: show "answer sent" instead of the answer tiles). It is not re-sent
+  once the question's results were shown.
 - With the get-ready screen on (the default), it arrives `seconds` after
   `get_ready`, at the moment the answer window opens. Start the phone and host
   timers on this event, as today.

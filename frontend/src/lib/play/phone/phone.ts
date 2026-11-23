@@ -4,23 +4,8 @@
 
 /* Helpers shared by the player phone screens. */
 
-import type { World } from '$lib/brand/answers';
-
-/** Colour world of each question, by index: the same cycle as the big screen. */
-export const QUESTION_WORLDS: readonly World[] = [
-	'indigo',
-	'teal',
-	'violet',
-	'cobalt',
-	'ultraviolet',
-	'midnight'
-];
-
-export function questionWorld(index: number | string | undefined | null): World {
-	const i = Number(index);
-	if (!Number.isFinite(i) || i < 0) return 'indigo';
-	return QUESTION_WORLDS[Math.floor(i) % QUESTION_WORLDS.length];
-}
+/** Colour world of each question, by index: one list for host, phone and remote. */
+export { QUESTION_WORLDS, questionWorld } from '$lib/brand/answers';
 
 /** Nickname rules of the server: trimmed, inner whitespace collapsed, 2 to 20 chars. */
 export const NICKNAME_MIN = 2;

@@ -60,6 +60,8 @@ SPDX-License-Identifier: MPL-2.0
 	let kicked = $state(false);
 	let game_over = $state(false);
 	let podium: PodiumData | null = $state(null);
+	let join_notice = $state('');
+	let rejoin_token = '';
 
 	let get_ready: GetReadyData | null = $state(null);
 	let get_ready_at = $state(0);
@@ -105,7 +107,8 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	};
 
-	const read_cookie = (): { sid: string; username: string; game_pin: string } | null => {
+	type JoinedCookie = { sid: string; username: string; game_pin: string; token?: string };
+	const read_cookie = (): JoinedCookie | null => {
 		try {
 			const raw = Cookies.get('joined_game');
 			return raw ? JSON.parse(raw) : null;
@@ -114,7 +117,9 @@ SPDX-License-Identifier: MPL-2.0
 		}
 	};
 	const write_cookie = () => {
-		Cookies.set('joined_game', JSON.stringify({ sid: socket.id, username, game_pin }), {
+		const value: JoinedCookie = { sid: socket.id ?? '', username, game_pin };
+		if (rejoin_token) value.token = rejoin_token;
+		Cookies.set('joined_game', JSON.stringify(value), {
 			expires: 1 / 12 // two hours, like the game keys on the server
 		});
 	};
@@ -162,15 +167,20 @@ SPDX-License-Identifier: MPL-2.0
 			game_pin = cookie.game_pin;
 			rejoining = true;
 		}
+		if (cookie.token) rejoin_token = cookie.token;
 		socket.emit('rejoin_game', {
 			old_sid: cookie.sid,
 			username: cookie.username,
-			game_pin: cookie.game_pin
+			game_pin: cookie.game_pin,
+			rejoin_token: cookie.token
 		});
 		if (rejoin_timer) clearTimeout(rejoin_timer);
 		rejoin_timer = setTimeout(() => {
-			// No answer: the server did not know this session any more
-			rejoining = false;
+			// No answer at all (old server): show the join form with a hint
+			if (!gameData && rejoining) {
+				rejoining = false;
+				join_notice = 'We could not get you back into the game. Join again.';
+			}
 		}, 7000);
 		fetch(`/api/v1/quiz/play/check_captcha/${cookie.game_pin}`)
 			.then((r) => (r.ok ? r.json() : null))
@@ -189,7 +199,13 @@ SPDX-License-Identifier: MPL-2.0
 	});
 	on('time_sync', (d) => socket.emit('echo_time_sync', d));
 
+	const take_token = (d: any) => {
+		if (d && typeof d.rejoin_token === 'string') rejoin_token = d.rejoin_token;
+	};
+
 	on('joined_game', (d: PlayerGame) => {
+		take_token(d);
+		join_notice = '';
 		gameData = d;
 		started = Boolean(d?.started);
 		question_count = d?.question_count ?? question_count;
@@ -207,6 +223,8 @@ SPDX-License-Identifier: MPL-2.0
 	on('rejoined_game', (d: PlayerGame) => {
 		if (rejoin_timer) clearTimeout(rejoin_timer);
 		rejoining = false;
+		join_notice = '';
+		take_token(d);
 		const first = !gameData;
 		gameData = d;
 		started = started || Boolean(d?.started);
@@ -219,6 +237,26 @@ SPDX-License-Identifier: MPL-2.0
 		if (locked && last_payload && !results_open && !time_up) {
 			socket.emit('submit_answer', last_payload);
 		}
+	});
+
+	// The server no longer knows this phone's place (expired, or the nickname
+	// is held by another session): back to the join form with a clear message.
+	on('rejoin_failed', (d: { reason?: string; message?: string }) => {
+		if (rejoin_timer) clearTimeout(rejoin_timer);
+		Cookies.remove('joined_game');
+		rejoin_token = '';
+		rejoining = false;
+		reset_question();
+		question = undefined;
+		question_index = null;
+		get_ready = null;
+		gameData = undefined;
+		started = false;
+		join_notice =
+			d?.message ||
+			(d?.reason === 'game_not_found'
+				? 'This game is over or no longer exists.'
+				: 'We could not get you back into the game. Join again.');
 	});
 
 	on('start_game', () => {
@@ -245,8 +283,15 @@ SPDX-License-Identifier: MPL-2.0
 		question = d.question;
 		question_index = d.question_index;
 		get_ready = null;
-		if (!same) {
+		const extra = d as SetQuestionNumber & { remaining?: number; already_answered?: boolean };
+		if (typeof extra.remaining === 'number') {
+			// Sent to a phone that (re)joined mid-question: the time actually left
+			deadline = Date.now() + Math.max(0, extra.remaining) * 1000;
+		} else if (!same) {
 			deadline = Date.now() + (Number(d.question.time) || 0) * 1000;
+		}
+		if (extra.already_answered && !locked) {
+			locked = { label: '' };
 		}
 	});
 
@@ -337,6 +382,7 @@ SPDX-License-Identifier: MPL-2.0
 	on('game_not_found', () => {
 		if (read_cookie()) {
 			Cookies.remove('joined_game');
+			if (rejoining) join_notice = 'This game is over or no longer exists.';
 			rejoining = false;
 			gameData = undefined;
 		}
@@ -383,7 +429,7 @@ SPDX-License-Identifier: MPL-2.0
 			</div>
 		</PhoneShell>
 	{:else}
-		<JoinGame bind:game_pin bind:game_mode bind:username />
+		<JoinGame bind:game_pin bind:game_mode bind:username notice={join_notice} />
 	{/if}
 {:else if results_open}
 	<Result

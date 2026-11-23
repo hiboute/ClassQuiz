@@ -326,16 +326,80 @@ async def record_answer(
     return answer_data
 
 
+def _rejoin_token_key(game_pin: str) -> str:
+    """HASH username -> secret the phone got in joined_game (proves who it is on rejoin)."""
+    return f"game_session:{game_pin}:rejoin_tokens"
+
+
+def _player_data(game_data: PlayGame, **extra) -> dict:
+    data = game_data.to_player_data()
+    if isinstance(data, tuple):  # to_player_data returns a 1-tuple
+        data = data[0]
+    return {**data, **extra}
+
+
+async def _new_rejoin_token(game_pin: str, username: str) -> str:
+    token = os.urandom(16).hex()
+    await redis.hset(_rejoin_token_key(game_pin), username, token)
+    await redis.expire(_rejoin_token_key(game_pin), KEY_TTL)
+    return token
+
+
+async def _rejoin_failed(sid: str, reason: str, message: str) -> None:
+    await sio.emit("rejoin_failed", {"reason": reason, "message": message}, room=sid)
+
+
+async def _send_open_question(sid: str, game_pin: str, game_data: PlayGame, username: str | None = None) -> None:
+    """Bring a (re)joining phone to the open question: the question, the time
+    left, whether this player already answered it, and a pause."""
+    q_index = game_data.current_question
+    if not (
+        game_data.question_show
+        and 0 <= q_index < len(game_data.questions)
+        and game_data.questions[q_index].type != QuizQuestionType.SLIDE
+    ):
+        return
+    if await redis.get(_closed_key(game_pin, q_index)) is not None:
+        return
+    payload = _question_payload(game_data, q_index)
+    paused = await redis.get(_paused_key(game_pin))
+    started_raw = await redis.get(_current_time_key(game_pin))
+    if paused is not None:
+        payload["remaining"] = float(json.loads(paused)["remaining"])
+    elif started_raw is not None:
+        elapsed = (datetime.now() - datetime.fromisoformat(_as_str(started_raw))).total_seconds()
+        payload["remaining"] = round(max(0.0, _time_limit_s(game_data.questions[q_index]) - elapsed), 1)
+    if username is not None:
+        payload["already_answered"] = bool(
+            await redis.sismember(f"game_session:{game_pin}:{q_index}:answered", username)
+        )
+    await sio.emit("set_question_number", payload, room=sid)
+    if paused is not None:
+        await sio.emit("game_paused", json.loads(paused), room=sid)
+
+
 @sio.event
 async def rejoin_game(sid: str, data: dict):
+    """A phone that lost its socket (reload, network switch) takes its place back.
+
+    Accepted when `old_sid` is the socket the server holds for this nickname
+    (a plain reconnect), or when `rejoin_token` is the secret this phone got
+    in `joined_game` (the held socket is a stale one of the same phone, e.g.
+    after a reload raced a reconnect). Anything else gets `rejoin_failed`.
+    """
+    if not isinstance(data, dict) or "game_pin" not in data:
+        await _rejoin_failed(sid, "invalid", "Join the game again.")
+        return
     redis_res = await redis.get(f"game:{data['game_pin']}")
     if redis_res is None:
         await sio.emit("game_not_found", room=sid)
+        await _rejoin_failed(sid, "game_not_found", "This game is over or no longer exists.")
         return
     try:
         d = RejoinGameData(**data)
     except ValidationError as e:
         await sio.emit("error", room=sid)
+        await _rejoin_failed(sid, "invalid", "Join the game again.")
         print(e)
         return
     if await redis.sismember(_banned_key(d.game_pin), d.username.casefold()):
@@ -343,21 +407,37 @@ async def rejoin_game(sid: str, data: dict):
         await sio.emit("kick", room=sid)
         return
     redis_sid_key = f"game_session:{d.game_pin}:players:{d.username}"
-    old_sid = await redis.get(redis_sid_key)
-    if old_sid != d.old_sid:
+    held_sid = _as_str(await redis.get(redis_sid_key))
+    if held_sid is None:
+        await _rejoin_failed(sid, "unknown_player", "Your place in this game expired. Join again.")
+        return
+    stored_token = _as_str(await redis.hget(_rejoin_token_key(d.game_pin), d.username))
+    token_ok = bool(d.rejoin_token) and stored_token is not None and d.rejoin_token == stored_token
+    if held_sid == sid:
+        pass  # this socket already rejoined (duplicate request): answer again
+    elif held_sid == d.old_sid or token_ok:
+        if held_sid != d.old_sid and held_sid != sid and sio.manager.is_connected(held_sid, "/"):
+            # The same phone still has an older socket open here: retire it.
+            await sio.leave_room(held_sid, d.game_pin)
+            await sio.leave_room(held_sid, _players_room(d.game_pin))
+    else:
+        await _rejoin_failed(
+            sid,
+            "stale_session",
+            "This nickname is already in use in this game. Join again with another one.",
+        )
         return
     encrypted_datetime = fernet.encrypt(datetime.now().isoformat().encode("utf-8")).decode("utf-8")
     await sio.emit("time_sync", encrypted_datetime, room=sid)
     await redis.set(redis_sid_key, sid, ex=KEY_TTL)
-    await redis.srem(
-        f"game_session:{d.game_pin}:players",
-        GamePlayer(username=d.username, sid=d.old_sid).model_dump_json(),
-    )
-    await redis.sadd(
-        f"game_session:{d.game_pin}:players",
-        GamePlayer(username=d.username, sid=sid).model_dump_json(),
-    )
+    players_key = f"game_session:{d.game_pin}:players"
+    async with redis.pipeline(transaction=False) as pipe:
+        for old in {held_sid, d.old_sid}:
+            pipe.srem(players_key, GamePlayer(username=d.username, sid=old).model_dump_json())
+        pipe.sadd(players_key, GamePlayer(username=d.username, sid=sid).model_dump_json())
+        await pipe.execute()
     await redis.zadd(_leaderboard_key(d.game_pin), {d.username: 0}, nx=True)
+    token = stored_token if stored_token is not None else await _new_rejoin_token(d.game_pin, d.username)
     game_data = PlayGame.model_validate_json(redis_res)
     session = {
         "game_pin": d.game_pin,
@@ -370,9 +450,11 @@ async def rejoin_game(sid: str, data: dict):
     await sio.enter_room(sid, _players_room(d.game_pin))
     await sio.emit(
         "rejoined_game",
-        game_data.to_player_data(),
+        _player_data(game_data, username=d.username, rejoin_token=token),
         room=sid,
     )
+    if game_data.started:
+        await _send_open_question(sid, d.game_pin, game_data, d.username)
 
 
 def _nickname_error(e: ValidationError) -> NicknameError | None:
@@ -444,9 +526,10 @@ async def join_game(sid: str, data: dict):
     await redis.expire(_leaderboard_key(d.game_pin), KEY_TTL)
     await sio.enter_room(sid, d.game_pin)
     await sio.enter_room(sid, _players_room(d.game_pin))
+    token = await _new_rejoin_token(d.game_pin, d.username)
     await sio.emit(
         "joined_game",
-        game_data.to_player_data(),
+        _player_data(game_data, username=d.username, rejoin_token=token),
         room=sid,
     )
 
@@ -471,16 +554,7 @@ async def join_game(sid: str, data: dict):
     if game_data.started:
         # Bring a late player to the current state of the game.
         await sio.emit("start_game", room=sid)
-        q_index = game_data.current_question
-        if (
-            game_data.question_show
-            and 0 <= q_index < len(game_data.questions)
-            and game_data.questions[q_index].type != QuizQuestionType.SLIDE
-        ):
-            await sio.emit("set_question_number", _question_payload(game_data, q_index), room=sid)
-            paused = await redis.get(_paused_key(d.game_pin))
-            if paused is not None:
-                await sio.emit("game_paused", json.loads(paused), room=sid)
+        await _send_open_question(sid, d.game_pin, game_data)
 
 
 class _RandomNicknameInput(BaseModel):

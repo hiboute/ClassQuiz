@@ -171,6 +171,11 @@ SPDX-License-Identifier: MPL-2.0
 									<li class="rounded-full bg-white/10 px-4 py-2 font-bold">{answer.answer}</li>
 								{/each}
 							</ul>
+						{:else if question.type === QuizQuestionType.WORD_CLOUD}
+							<p class="text-sm text-ink-muted">
+								Word cloud: players send one word or a short phrase (30 characters at most).
+								No right answer and no points; the big screen shows the words as they arrive.
+							</p>
 						{:else if question.type === QuizQuestionType.SLIDE}
 							{#await import('$lib/play/admin/slide.svelte')}
 								<Spinner my_20={false} />

@@ -15,16 +15,7 @@ SPDX-License-Identifier: MPL-2.0
 	import { navbarVisible } from '$lib/stores.svelte.ts';
 	import World from '$lib/brand/World.svelte';
 	import ShapeMark from '$lib/brand/ShapeMark.svelte';
-	import { answerStyle, type World as WorldName } from '$lib/brand/answers';
-
-	const QUESTION_WORLDS: WorldName[] = [
-		'indigo',
-		'teal',
-		'violet',
-		'cobalt',
-		'ultraviolet',
-		'midnight'
-	];
+	import { answerStyle, QUESTION_WORLDS, type World as WorldName } from '$lib/brand/answers';
 
 	const data = {
 		game_pin: page.url.searchParams.get('game_pin'),

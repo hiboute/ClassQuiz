@@ -8,6 +8,8 @@ export interface FitOptions {
 	lines: number;
 	/** change it when the text changes, so the size is measured again */
 	key?: unknown;
+	/** check the width only (single-line display numbers with a tight line height) */
+	widthOnly?: boolean;
 }
 
 /**
@@ -26,7 +28,8 @@ export function fitText(node: HTMLElement, options: FitOptions) {
 			const ratio = parseFloat(cs.lineHeight) / size || 1.1;
 			const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
 			const fits = () =>
-				node.scrollHeight - padY <= Math.ceil(ratio * size * opts.lines) + 2 &&
+				(opts.widthOnly ||
+					node.scrollHeight - padY <= Math.ceil(ratio * size * opts.lines) + 2) &&
 				node.scrollWidth <= node.clientWidth + 1;
 			while (!fits() && size > opts.min) {
 				size -= 2;

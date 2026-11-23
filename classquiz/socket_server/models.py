@@ -23,9 +23,12 @@ class JoinGameData(BaseModel):
 
 
 class RejoinGameData(BaseModel):
-    old_sid: str
+    old_sid: str | None = None
     game_pin: str
     username: str
+    # Secret sent in joined_game / rejoined_game; lets a phone take its
+    # nickname back when the server still holds a stale socket for it.
+    rejoin_token: str | None = None
 
 
 class RegisterAsAdminData(BaseModel):

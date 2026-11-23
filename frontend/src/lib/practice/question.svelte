@@ -249,6 +249,30 @@ SPDX-License-Identifier: MPL-2.0
 				>
 			</div>
 		{/if}
+	{:else if question.type === QuizQuestionType.WORD_CLOUD}
+		{#if selected_answer !== undefined || timer_res === '0'}
+			<p class="text-center mt-4">
+				{#if selected_answer}
+					You sent <span class="font-bold">{selected_answer}</span>.
+				{/if}
+				A word cloud has no right answer: in a live game, the big screen shows every word.
+			</p>
+		{:else}
+			<div class="flex justify-center mt-2">
+				<input type="text" maxlength="30" bind:value={text_input} class="bt-input text-center" />
+			</div>
+			<div class="flex justify-center">
+				<button
+					type="button"
+					disabled={!String(text_input ?? '').trim()}
+					class="bt-btn-primary my-2"
+					onclick={() => {
+						selected_answer = String(text_input).trim();
+						timer_res = '0';
+					}}>{$t('words.submit')}</button
+				>
+			</div>
+		{/if}
 	{:else if question.type === QuizQuestionType.ORDER}
 		<div class="flex flex-col w-full h-full gap-4 px-4 py-6">
 			{#each question.answers as answer, i (answer.id)}

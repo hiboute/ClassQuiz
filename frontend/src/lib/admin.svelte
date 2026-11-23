@@ -39,7 +39,7 @@ SPDX-License-Identifier: MPL-2.0
 	import HostLeaderboard from '$lib/play/host/HostLeaderboard.svelte';
 	import HostPodium from '$lib/play/host/HostPodium.svelte';
 	import HostToasts from '$lib/play/host/HostToasts.svelte';
-	import { worldFor, type PodiumData } from '$lib/play/host/worlds';
+	import { isGraded, worldFor, type PodiumData } from '$lib/play/host/worlds';
 	import type { World } from '$lib/brand/answers';
 
 	interface Props {
@@ -76,6 +76,8 @@ SPDX-License-Identifier: MPL-2.0
 
 	const quiz = $derived(game_state.quiz_data);
 	const total = $derived(quiz?.questions?.length ?? 0);
+	// "N of M right" on the podium counts only questions that have a right answer
+	const graded_total = $derived((quiz?.questions ?? []).filter((q) => isGraded(q)).length);
 	const quizTitle = $derived(quiz?.title ? quiz.title.replace(/<[^>]*>/g, '') : '');
 	const index = $derived(game_state.selected_question);
 	const question = $derived<Question | undefined>(quiz?.questions?.[index]);
@@ -230,7 +232,7 @@ SPDX-License-Identifier: MPL-2.0
 					data={podiumData}
 					{quizTitle}
 					{rights}
-					questionCount={total}
+					questionCount={graded_total}
 					instant={frozen}
 					actions={game_state.control_visible ? podium_actions : undefined}
 				/>

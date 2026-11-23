@@ -3,10 +3,17 @@
 // SPDX-License-Identifier: MPL-2.0
 
 import type { Handle } from '@sveltejs/kit';
+import { dev } from '$app/environment';
 import * as jose from 'jose';
 
 /** @type {import('@sveltejs/kit').Handle} */
 export const handle: Handle = async ({ event, resolve }) => {
+	// /__demo/** are dev-only harnesses with fake data. Their pages render
+	// client-side only (ssr = false), so the layout's 404 alone would still
+	// answer HTTP 200 with an app shell: refuse them here in production.
+	if (!dev && (event.url.pathname === '/__demo' || event.url.pathname.startsWith('/__demo/'))) {
+		return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/plain' } });
+	}
 	const access_token = event.cookies.get('access_token');
 	if (!access_token) {
 		event.locals.email = null;

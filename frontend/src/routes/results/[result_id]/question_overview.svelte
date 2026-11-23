@@ -70,7 +70,7 @@ SPDX-License-Identifier: MPL-2.0
 				<span class="flex-1 min-w-0 font-bold text-lg leading-snug break-words"
 					>{@html question.question}</span
 				>
-				{#if question.type !== QuizQuestionType.VOTING && answers[i]?.length}
+				{#if question.type !== QuizQuestionType.VOTING && question.type !== QuizQuestionType.WORD_CLOUD && answers[i]?.length}
 					{@const correct_answers = get_number_of_correct_answers(i)}
 					<span class="flex gap-5 text-sm text-ink-muted shrink-0">
 						<span

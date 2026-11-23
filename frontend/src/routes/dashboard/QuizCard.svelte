@@ -48,7 +48,10 @@ SPDX-License-Identifier: MPL-2.0
 
 <svelte:window onclick={on_window_click} onkeydown={on_window_key} />
 
-<article class="bt-glass bt-glass-faint h-full p-5 sm:p-6 flex flex-col gap-4">
+<article
+	class="bt-glass bt-glass-faint h-full p-5 sm:p-6 flex flex-col gap-4"
+	class:card-menu-open={menu_open}
+>
 	<div class="flex items-start gap-3">
 		<div class="min-w-0 flex-1">
 			<div class="flex flex-wrap items-center gap-2">
@@ -65,7 +68,7 @@ SPDX-License-Identifier: MPL-2.0
 				{@html item.title}
 			</h2>
 		</div>
-		<div class="relative shrink-0" bind:this={menu_el}>
+		<div class="relative z-30 shrink-0" bind:this={menu_el}>
 			<button
 				type="button"
 				class="h-10 w-10 -me-2 -mt-1 rounded-full hover:bg-white/10 flex items-center justify-center"
@@ -85,7 +88,7 @@ SPDX-License-Identifier: MPL-2.0
 			{#if menu_open}
 				<div
 					role="menu"
-					class="absolute end-0 top-11 z-20 w-52 overflow-hidden rounded-[18px] bg-[#1a1440]/95 backdrop-blur-xl shadow-2xl py-2"
+					class="absolute end-0 top-11 z-20 w-52 overflow-hidden rounded-[18px] bg-[#1a1440] shadow-2xl py-2"
 				>
 					{#if is_quiz}
 						<a
@@ -170,6 +173,12 @@ SPDX-License-Identifier: MPL-2.0
 </article>
 
 <style>
+	/* The card is a stacking context (backdrop-filter): lift it above the
+	   next cards while its menu is open, so the menu is never covered. */
+	.card-menu-open {
+		position: relative;
+		z-index: 30;
+	}
 	.card-btn {
 		min-width: 0;
 		padding: 0 10px;

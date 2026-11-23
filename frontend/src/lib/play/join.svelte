@@ -31,12 +31,15 @@ SPDX-License-Identifier: MPL-2.0
 		game_pin: string;
 		game_mode: any;
 		username: any;
+		/** Why the player is back on this form (e.g. a rejoin the server refused) */
+		notice?: string;
 	}
 
 	let {
 		game_pin = $bindable(),
 		game_mode = $bindable(),
-		username = $bindable()
+		username = $bindable(),
+		notice = ''
 	}: Props = $props();
 
 	const PIN_LENGTH = 6;
@@ -324,6 +327,9 @@ SPDX-License-Identifier: MPL-2.0
 		<span class="bt-headline pj-headline">Ready to play</span>
 	</h1>
 	<p class="pj-sub">Pick a nickname the room will see on the leaderboard.</p>
+	{#if notice && !form_error}
+		<p class="pj-form-error pj-notice" role="alert" data-testid="join-notice">{notice}</p>
+	{/if}
 
 	<form class="pj-form" onsubmit={join} novalidate>
 		<label class="pj-field" class:pj-field-error={pin_error}>
@@ -536,6 +542,9 @@ SPDX-License-Identifier: MPL-2.0
 		background: var(--fill-deep);
 		color: var(--accent-orchid-tint);
 		font-size: 15px;
+	}
+	.pj-notice {
+		margin-top: 16px;
 	}
 	.pj-btn {
 		margin-top: 10px;

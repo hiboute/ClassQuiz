@@ -22,7 +22,7 @@ SPDX-License-Identifier: MPL-2.0
 
 {#if open}
 	<div
-		class="fixed inset-x-0 top-20 z-[60] flex justify-center px-4 pointer-events-none"
+		class="fixed inset-x-0 top-20 z-40 flex justify-center px-4 pointer-events-none"
 		transition:fly|global={{ y: -100 }}
 	>
 		<div

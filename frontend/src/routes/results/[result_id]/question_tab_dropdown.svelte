@@ -28,6 +28,24 @@ SPDX-License-Identifier: MPL-2.0
 
 	let { question, answers }: Props = $props();
 
+	// Polls and word clouds have no right answer and give no points
+	const no_grade = $derived(
+		question.type === QuizQuestionType.VOTING || question.type === QuizQuestionType.WORD_CLOUD
+	);
+	const words = $derived.by(() => {
+		if (question.type !== QuizQuestionType.WORD_CLOUD) return [];
+		const map = new Map<string, { text: string; count: number }>();
+		for (const a of answers ?? []) {
+			const text = String(a.answer ?? '').trim().replace(/\s+/g, ' ');
+			if (!text) continue;
+			const key = text.toLocaleLowerCase();
+			const cur = map.get(key);
+			if (cur) cur.count += 1;
+			else map.set(key, { text, count: 1 });
+		}
+		return [...map.values()].sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
+	});
+
 	const get_answer_count_for_answer = (answer: string): number => {
 		let count = 0;
 		let answer_id = 0;
@@ -60,7 +78,7 @@ SPDX-License-Identifier: MPL-2.0
 				{@const n = get_answer_count_for_answer(answer.answer)}
 				{@const style = answerStyle(ai)}
 				{@const show_right =
-					question.type !== QuizQuestionType.VOTING && question.type !== QuizQuestionType.TEXT}
+					!no_grade && question.type !== QuizQuestionType.TEXT}
 				<li class="flex items-center gap-3">
 					<span class="{style.className} !rounded-[9px] h-8 w-8 shrink-0 justify-center">
 						<ShapeMark shape={style.shape} size={14} color={style.text} />
@@ -88,6 +106,16 @@ SPDX-License-Identifier: MPL-2.0
 			{/each}
 		</ul>
 	{/if}
+	{#if words.length}
+		<ul class="flex flex-wrap gap-2" data-testid="result-words">
+			{#each words as w}
+				<li class="rounded-full bg-white/10 px-4 py-2">
+					<span class="font-bold">{w.text}</span>
+					<span class="tabular-nums text-ink-muted ms-1">{w.count}</span>
+				</li>
+			{/each}
+		</ul>
+	{/if}
 	<div class="overflow-x-auto -mx-2">
 		<table class="min-w-full text-sm">
 			<thead>
@@ -95,7 +123,7 @@ SPDX-License-Identifier: MPL-2.0
 					<th class="px-2 py-2 text-start font-normal whitespace-nowrap uppercase text-[11px] tracking-[2px]"
 						>{$t('result_page.player_name')}</th
 					>
-					{#if question.type !== QuizQuestionType.VOTING}
+					{#if !no_grade}
 						<th class="px-2 py-2 text-end font-normal whitespace-nowrap uppercase text-[11px] tracking-[2px]"
 							>{$t('words.score')}</th
 						>
@@ -106,7 +134,7 @@ SPDX-License-Identifier: MPL-2.0
 					<th class="px-2 py-2 text-start font-normal whitespace-nowrap uppercase text-[11px] tracking-[2px]"
 						>{$t('words.answer')}</th
 					>
-					{#if question.type !== QuizQuestionType.VOTING}
+					{#if !no_grade}
 						<th class="px-2 py-2 text-start font-normal whitespace-nowrap uppercase text-[11px] tracking-[2px]"
 							>{$t('words.correct')}</th
 						>
@@ -117,12 +145,12 @@ SPDX-License-Identifier: MPL-2.0
 				{#each answers as answer}
 					<tr class="border-t border-white/10">
 						<td class="px-2 py-2.5 font-bold whitespace-nowrap">{answer.username}</td>
-						{#if question.type !== QuizQuestionType.VOTING}
+						{#if !no_grade}
 							<td class="px-2 py-2.5 text-end tabular-nums">{answer.score}</td>
 						{/if}
 						<td class="px-2 py-2.5 text-end tabular-nums whitespace-nowrap">{(answer.time_taken / 1000).toFixed(2)} s</td>
 						<td class="px-2 py-2.5">{answer.answer}</td>
-						{#if question.type !== QuizQuestionType.VOTING}
+						{#if !no_grade}
 							<td class="px-2 py-2.5">
 								{#if answer.right}
 									<span class="text-[var(--accent-green-tint)]">Right</span>

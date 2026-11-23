@@ -2,11 +2,14 @@
 //
 // SPDX-License-Identifier: MPL-2.0
 
-import { WORLDS, type World } from '$lib/brand/answers';
+import { QUESTION_WORLDS, type World } from '$lib/brand/answers';
 import { QuizQuestionType, type Question } from '$lib/quiz_types';
 
-/** Each question gets its own colour world, cycling through the six. */
-export const worldFor = (index: number): World => WORLDS[((index % 6) + 6) % 6];
+/** Each question gets its own colour world, cycling through the six (same order as the phone). */
+export const worldFor = (index: number): World => {
+	const n = QUESTION_WORLDS.length;
+	return QUESTION_WORLDS[(((Math.floor(index) || 0) % n) + n) % n];
+};
 
 /** Question types that award points (and so move the leaderboard). */
 export const isGraded = (q: Question | undefined): boolean =>

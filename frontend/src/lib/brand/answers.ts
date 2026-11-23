@@ -89,6 +89,26 @@ export const WORLDS: readonly World[] = [
 	'ultraviolet'
 ];
 
+/**
+ * Colour world of each question, by index (host screen, phone and remote use
+ * this one list, so question 3 is the same colour everywhere).
+ */
+export const QUESTION_WORLDS: readonly World[] = [
+	'indigo',
+	'teal',
+	'violet',
+	'cobalt',
+	'ultraviolet',
+	'midnight'
+];
+
+/** World of question `index` (indigo for anything that is not a valid index). */
+export function questionWorld(index: number | string | undefined | null): World {
+	const i = Number(index);
+	if (!Number.isFinite(i) || i < 0) return 'indigo';
+	return QUESTION_WORLDS[Math.floor(i) % QUESTION_WORLDS.length];
+}
+
 /** Photographic grounds shipped in static/brand/grounds (WebP, 1920x1080). */
 export const GROUNDS = {
 	cover: '/brand/grounds/core-cover-mosaic.webp',

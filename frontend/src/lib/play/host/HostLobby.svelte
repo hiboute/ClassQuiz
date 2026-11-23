@@ -110,9 +110,17 @@ SPDX-License-Identifier: MPL-2.0
 
 <div class="lb-pin">
 	<span class="h-label lb-pin__label">Game PIN</span>
+	<!-- Shrinks until the PIN fits its 900px column: never clipped, even with
+	     an 8-digit PIN or a wider fallback font before the brand font loads. -->
 	<div
 		class="lb-pin__num h-num bt-text-display"
-		style="font-size: {pinText.length <= 7 ? 204 : pinText.length <= 8 ? 172 : 150}px"
+		use:fitText={{
+			max: pinText.length <= 7 ? 204 : pinText.length <= 9 ? 172 : 150,
+			min: 96,
+			lines: 1,
+			widthOnly: true,
+			key: pinText
+		}}
 	>
 		{pinText}
 	</div>
