@@ -1,70 +1,70 @@
 {
     "index_page": {
-        "slogan": "The open-source quiz-platform!",
+        "slogan": "Live quiz for India Tech Hub events",
         "meta": {
-            "description": "India Tech Hub Live Quiz is a quiz app to learn interactively for students, which is open source and free to use",
+            "description": "India Tech Hub Live Quiz: the live quiz of India Tech Hub events. Join from your phone and play on the big screen.",
             "title": "Home"
         },
-        "stats": "There are already {{user_count}} users and {{quiz_count}} quizzes on India Tech Hub Live Quiz.",
+        "stats": "{{quiz_count}} quizzes and {{user_count}} organisers.",
         "see_what_true_and_false": "See what was right or wrong",
         "see_how_many_true_and_false": "See how many were right or wrong",
-        "create_or_import": "Create or Import",
+        "create_or_import": "Create or import",
         "see_all_quizzes": "See all your quizzes",
-        "teachers_site": "Teacher's site",
-        "students_site": "Student's site",
-        "no_tracking": "No Tracking",
-        "self_hostable": "Self-Hostable",
-        "german_server": "German Server",
-        "user_friendly": "User-Friendly",
-        "completely_free": "Completely Cost Free",
-        "quiz_results_downloadable": "Quiz-results can be downloaded",
+        "teachers_site": "Host screen",
+        "students_site": "Player screen",
+        "no_tracking": "No tracking",
+        "self_hostable": "Event hosted",
+        "german_server": "Event server",
+        "user_friendly": "Simple to play",
+        "completely_free": "Free to play",
+        "quiz_results_downloadable": "Results can be downloaded",
         "multilingual": "Multilingual",
-        "dark_mode": "Darkmode",
-        "get_a_quiz": "1. Get a quiz",
-        "create_a_quiz_from_scratch": "Create a quiz from scratch with the editor and include pictures and more",
-        "find_or_explore": "Find (or explore) quizzes made or imported by other people",
+        "dark_mode": "Dark mode",
+        "get_a_quiz": "1. Prepare a quiz",
+        "create_a_quiz_from_scratch": "Create a quiz in the editor, with images and more",
+        "find_or_explore": "Find quizzes made by other organisers",
         "play_quiz": "2. Play the quiz",
         "select_answer": "Select the answer",
-        "choose_answer_wisely": "Choose your answer wisely",
+        "choose_answer_wisely": "Choose your answer",
         "view_results": "View results",
-        "check_if_chosen_wisely": "Check, if you have chosen wisely",
-        "list_winners": "List winners",
-        "get_ranking_and_winners": "Get the ranking and see who won",
-        "why_classquiz": "Why India Tech Hub Live Quiz?",
-        "no_tracking_content": "Others track you and sends that info to third-parties, but India Tech Hub Live Quiz doesn't.",
-        "self_hostable_content": "India Tech Hub Live Quiz can easily be self-hosted, so the data is only in your control!",
-        "user_friendly_content": "India Tech Hub Live Quiz aims to be simple, so it is can be used by everyone.",
-        "completely_free_content": "India Tech Hub Live Quiz is completely cost free (for the user), without any paid plans or annoying redirects to the upgrade-page. Donations are highly appreciated.",
-        "quiz_results_downloadable_content": "Quiz-results can be easily exported into an Excel-spreadsheet. (Didn't know others couldn't do that)",
-        "multilingual_content": "India Tech Hub Live Quiz is available in English, French, German, Italian, Norwegian Bokmål, Turkish, and partly Indonesian and Catalan.",
-        "dark_mode_content": "One of the most important features a website can have!",
-        "german_server_content": "India Tech Hub Live Quiz's servers are located in Germany and hosted by netcup.",
-        "download_quizzes": "Download Quizzes",
-        "download_quizzes_content": "Quizzes can be downloaded as one file and imported at any time. This also lets you move your quizzes to other India Tech Hub Live Quiz instances.",
-        "community_driven": "Community-driven",
-        "community_driven_content": "India Tech Hub Live Quiz depends on its community for funding, testing ideas, feature requests, translations and more! You can also be a part of the India Tech Hub Live Quiz-community!",
-        "how_does_classquiz_work": "How does India Tech Hub Live Quiz even work?",
-        "no_player_limit": "No player limit",
-        "no_player_limit_content": "India Tech Hub Live Quiz doesn't have an artificial player limit. In theory, 1000+ players could play the same quiz, but it's tested with up to 300 players per quiz.",
-        "import_quiz_from_kahoot_and_edit": "Import quizzes from Kahoot! and edit them in India Tech Hub Live Quiz"
+        "check_if_chosen_wisely": "See how you did",
+        "list_winners": "Leaderboard",
+        "get_ranking_and_winners": "See the ranking and the podium",
+        "why_classquiz": "About Live Quiz",
+        "no_tracking_content": "Live Quiz does not use advertising or third-party tracking.",
+        "self_hostable_content": "Live Quiz runs on a server operated for the event.",
+        "user_friendly_content": "Join with a game PIN and a nickname. No account needed to play.",
+        "completely_free_content": "Playing is free and needs no account.",
+        "quiz_results_downloadable_content": "Organisers can export the results as a spreadsheet.",
+        "multilingual_content": "Live Quiz is available in several languages.",
+        "dark_mode_content": "Designed for dark rooms and big screens.",
+        "german_server_content": "Live Quiz runs on a server operated for the event.",
+        "download_quizzes": "Download quizzes",
+        "download_quizzes_content": "Quizzes can be downloaded as one file and imported again at any time.",
+        "community_driven": "Built on ClassQuiz",
+        "community_driven_content": "Live Quiz is built on ClassQuiz, open-source software by Mawoka and its contributors.",
+        "how_does_classquiz_work": "How Live Quiz works",
+        "no_player_limit": "Up to 400 players",
+        "no_player_limit_content": "Live Quiz is prepared for up to 400 players in one game.",
+        "import_quiz_from_kahoot_and_edit": "Import quizzes from a file and edit them in Live Quiz"
     },
     "overview_page": {
         "created_at": "Created at",
         "question_count": "Question count",
-        "no_quizzes": "Click the \"Create\"-button, or import a quiz to get going."
+        "no_quizzes": "Select Create, or import a quiz, to get started."
     },
     "edit_page": {
         "success_update_title": "Quiz updated.",
-        "success_update_body": "Nobody will expect the inquizition."
+        "success_update_body": "Your changes are saved."
     },
     "create_page": {
         "success": {
             "title": "Quiz created.",
-            "body": "Let the games begin."
+            "body": "It is ready to host."
         }
     },
     "register_page": {
-        "greeting": "Nice to meet you!",
+        "greeting": "Create your organiser account",
         "create_account": "Create account",
         "forgot_password?": "Forgot password?",
         "already_have_account?": "Already have an account?"
@@ -85,14 +85,14 @@
             },
             "error": {
                 "wrong_creds": "Wrong e-mail address or password.",
-                "unexpected": "Unexpected error!",
+                "unexpected": "Unexpected error",
                 "description": {
                     "wrong_creds": "Please ensure your password and e-mail address are correct.",
-                    "unexpected": "There was the good old unexpected error!"
+                    "unexpected": "Something went wrong. Please try again."
                 }
             }
         },
-        "use_backup_code": "Use backup-code"
+        "use_backup_code": "Use a backup code"
     },
     "words": {
         "question": "Question",
@@ -118,7 +118,7 @@
         "pin": "PIN",
         "kick": "Kick",
         "register": "Register",
-        "docs": "Docs",
+        "docs": "Help",
         "close": "Close",
         "save": "Save",
         "description": "Description",
@@ -139,22 +139,22 @@
         "result_plural": "Results",
         "count": "Count",
         "range": "Range",
-        "multiple_choice": "Multiple-Choice",
+        "multiple_choice": "Multiple choice",
         "private": "Private",
         "dashboard": "Dashboard",
         "question_plural": "Questions",
         "game_pin": "Game PIN",
         "other": "other",
         "other_plural": "others",
-        "donating": "donating",
+        "donating": "supporting the project",
         "find": "Find",
         "practice": "Practice",
         "error": "Error",
         "voting": "Voting",
         "download": "Download",
         "continue": "Continue",
-        "backup_code": "Backup-code",
-        "totp": "Totp",
+        "backup_code": "Backup code",
+        "totp": "TOTP",
         "text": "Text",
         "order": "Order",
         "results": "Results",
@@ -177,16 +177,16 @@
         "quiz": "Quiz",
         "quiztivity": "Quiztivity",
         "next": "Next",
-        "check_choice": "Check Choice",
+        "check_choice": "Check choice",
         "video": "Video",
         "library": "Library",
         "progress": "Progress",
         "speed": "Speed",
         "upload": "Upload",
-        "files_library": "Files Library",
+        "files_library": "Files library",
         "answer_plural": "Answers",
         "yes": "Yes",
-        "no": "no",
+        "no": "No",
         "analytics": "Analytics",
         "rating": "Rating",
         "like": "Like",
@@ -204,9 +204,9 @@
         "add_new_question": "Add new question",
         "delete_question": "Delete question",
         "delete_answer": "Delete answer",
-        "not_all_links_imgur_links": "Not all links are Imgur-links!",
-        "no_title": "No title...",
-        "empty": "Empty...",
+        "not_all_links_imgur_links": "Not all links are Imgur links.",
+        "no_title": "No title",
+        "empty": "Empty",
         "bg_image": "Background image",
         "slide": {
             "headline": "Headline",
@@ -221,29 +221,29 @@
         "check_choice_description": "All correct answers have to be chosen to score points",
         "order_description": "Answers can be brought into the correct order",
         "text_description": "Players can enter text",
-        "range_description": "A number-range can be selected with a slider",
+        "range_description": "A number range can be selected with a slider",
         "need_more_help": "Need more help?",
-        "visit_docs": "Visit the docs.",
+        "visit_docs": "Visit the help pages.",
         "enter_answer": "Enter an answer",
         "enable_reorder": "Enable reorder mode",
         "disable_reorder": "Disable reorder mode",
-        "advanced_settings": "Advanced Settings",
-        "hide_question_results": "Hide question resuluts?"
+        "advanced_settings": "Advanced settings",
+        "hide_question_results": "Hide question results"
     },
     "import_page": {
         "need_help": "Need help?",
-        "visit_docs": "Visit the documentation",
-        "a_kahoot_quiz": "A Kahoot!-Quiz",
-        "url_should_look_like_this": "The URL should look like this: https://create.kahoot.it/details/...",
-        "side_import_kahoot": "On this side you can import quizzes, which live on Kahoot!.",
-        "classquiz_quiz": "A India Tech Hub Live Quiz-Quiz",
-        "upload_file_ending": "Upload the file ending in .cqa or .xlsx",
-        "this_side_classquiz": "On this side you can import quizzes, which were exported from India Tech Hub Live Quiz.",
-        "this_side_classquiz_excel": "You can also upload excel files, if you've filled out the following template. If a quiz with the title already exists, it will append the questions to the existing quiz.",
-        "download_template_here": "Download the template"
+        "visit_docs": "Visit the help pages",
+        "a_kahoot_quiz": "Quiz file",
+        "url_should_look_like_this": "Upload a .cqa or .xlsx file.",
+        "side_import_kahoot": "Import a quiz from a file.",
+        "classquiz_quiz": "Import a quiz file",
+        "upload_file_ending": "Choose a file ending in .cqa or .xlsx",
+        "this_side_classquiz": "Import a quiz exported from Live Quiz or ClassQuiz (.cqa), or a spreadsheet (.xlsx).",
+        "this_side_classquiz_excel": "A spreadsheet must follow the layout below. If a quiz with the same title already exists, the questions are added to it.",
+        "download_template_here": "Spreadsheet layout"
     },
     "admin_page": {
-        "already_registered_as_admin": "There is already an admin registered for this game.",
+        "already_registered_as_admin": "A host is already connected to this game.",
         "start_game": "Start game",
         "time_left": "Time left",
         "get_results": "Get results",
@@ -251,14 +251,14 @@
         "get_final_results": "Get final results",
         "show_next_question": "Show next question",
         "start_by_showing_first_question": "Start by showing the first question.",
-        "no_answers": "No answers!",
+        "no_answers": "No answers",
         "stop_time": "Stop time",
         "save_results": "Save results",
-        "next_question": "Next Question ({{question}})",
+        "next_question": "Next question ({{question}})",
         "show_results": "Show results",
-        "stop_time_and_solutions": "Stop time and show solutions",
-        "enter_answer_into_field": "Enter your answer into the input field!",
-        "answers_submitted": "{{answer_count}} Answers submitted",
+        "stop_time_and_solutions": "Stop time and show answers",
+        "enter_answer_into_field": "Enter your answer in the field",
+        "answers_submitted": "{{answer_count}} answers submitted",
         "request_export_results": "Request result download",
         "download_export_results": "Download results",
         "export_results": "Export results"
@@ -270,13 +270,13 @@
         "old_password": "Old password",
         "new_password": "New password",
         "repeat_password": "Repeat password",
-        "change_password_submit": "Change password!",
+        "change_password_submit": "Change password",
         "last_seen": "Last seen",
         "check_location": "Check location",
         "delete_this_session": "Delete this session",
         "this_session?": "This session?",
         "change_avatar": "Change avatar",
-        "security_settings": "Security-Settings",
+        "security_settings": "Security settings",
         "add_api_key": "Add API key"
     },
     "explore_page": {
@@ -284,50 +284,50 @@
         "imported_by": "Imported by"
     },
     "search_page": {
-        "at_least_3_characters": "Enter at least 3 characters...",
-        "nothing_here": "There is nothing here..."
+        "at_least_3_characters": "Enter at least 3 characters",
+        "nothing_here": "Nothing found"
     },
     "play_page": {
-        "end_sentence": "That's it! This was the quiz.",
-        "1st_place": "1st Place",
-        "2nd_place": "2nd Place",
-        "3rd place": "3rd Place",
+        "end_sentence": "That was the last question.",
+        "1st_place": "1st place",
+        "2nd_place": "2nd place",
+        "3rd place": "3rd place",
         "with_out_of": "with {{correct_questions}} out of {{total_question_count}}",
         "final_result_rank": "{{place}}: {{username}} with {{points}} points",
         "your_score": "Your score: {{score}}",
         "join_description": "Join at {{url}} and enter {{pin}}.",
         "join_by_entering_code": "Join by entering the following code",
         "points_added": "Points added",
-        "your_place": "You're on place {{place}}!",
-        "players_waiting": "{{count}} player are waiting",
+        "your_place": "You are in place {{place}}",
+        "players_waiting": "{{count}} player is waiting",
         "players_waiting_plural": "{{count}} players are waiting"
     },
     "editor_page": {
         "add_an_answer": "Add an answer",
-        "right_click_to_delete": "Right-click on an answer to delete it!"
+        "right_click_to_delete": "Right-click an answer to delete it"
     },
     "dashboard": {
         "search_for_own_quizzes": "Search for your own quizzes",
-        "views_n_plays": "Views & Plays",
-        "info_analytics": "The \"Plays\" only show how often the quiz was started (you included), whereas the \"Views\" count how often the \"View\"-page was visited, so it also counts bots (sorry for that).",
-        "commandpalette_notice": "Press <kbd>Ctr</kbd>+<kbd>k</kbd> or <kbd>Meta</kbd>+<kbd>k</kbd> to open the command palette",
+        "views_n_plays": "Views and plays",
+        "info_analytics": "Plays count how often the quiz was started, including by you. Views count visits to the quiz page, which can include bots.",
+        "commandpalette_notice": "Press <kbd>Ctrl</kbd>+<kbd>k</kbd> or <kbd>Meta</kbd>+<kbd>k</kbd> to open the command palette",
         "create_quiz": "Create a new quiz"
     },
     "footer": {
-        "self_ads": "Made with ❤️ by {{mawoka_link}} and with the help of {{others_link}}.",
-        "more_details_here": "More details here",
-        "donate": "If you find this useful, please consider {{donate_link}}."
+        "self_ads": "India Tech Hub Live Quiz, built on ClassQuiz.",
+        "more_details_here": "More details",
+        "donate": "Built on open-source software."
     },
     "error_page": {
-        "404_text": "The page you were looking for is gone or never even existed. Who knows?",
-        "unknown_error_text": "That shouldn't happen. It's probably my fault, not yours, but maybe you have a magical power to break stuff..."
+        "404_text": "This page does not exist or has moved.",
+        "unknown_error_text": "Something went wrong. Please try again."
     },
     "uploader": {
-        "add_image": "Add Media",
-        "select_upload_type": "Select the Upload Type",
-        "upload_a_video": "Upload a Video",
-        "upload_video_popup_notice": "The popup is open; have a look at it for further information",
-        "upload_video": "Upload Video",
+        "add_image": "Add media",
+        "select_upload_type": "Select the upload type",
+        "upload_a_video": "Upload a video",
+        "upload_video_popup_notice": "The upload window is open. Follow the steps there.",
+        "upload_video": "Upload video",
         "visit_pixabay": "Visit Pixabay",
         "images_by_pixabay": "Images provided by Pixabay",
         "search_english_only": "The search works in English only",
@@ -347,14 +347,14 @@
         "clothe_type": "Clothes",
         "clothe_color": "Clothing color",
         "clothe_graphic_type": "Graphic",
-        "thats_you": "That's You!",
+        "thats_you": "That is you",
         "start_over": "Start over",
         "go_back": "Go back"
     },
     "results_page": {
-        "no_results_so_far": "No results saved so far...",
-        "quiz_title": "Quiz Title",
-        "date_played": "Date Played",
+        "no_results_so_far": "No results saved yet",
+        "quiz_title": "Quiz title",
+        "date_played": "Date played",
         "player_count": "Player count",
         "general_overview": {
             "sentence": "The quiz \"<b>{{title}}</b>\", which was played on <b>{{date}}</b> had <b>{{player_count}}</b> players with an average score of <b>{{average_score}}</b>."
@@ -367,72 +367,72 @@
         "correct_answer": "{{count}} correct answer",
         "correct_answer_plural": "{{count}} correct answers",
         "time_taken": "Time taken",
-        "player_score": "Player Score",
-        "player_correct_questions": "Correct Answers"
+        "player_score": "Player score",
+        "player_correct_questions": "Correct answers"
     },
     "controllers": {
         "add_new_controller": "Add new controller",
         "player_name": "Player name",
         "first_seen": "First seen",
         "last_seen": "Last seen",
-        "controller_name": "Controller Name",
+        "controller_name": "Controller name",
         "version_overview": "The newest version available is {{newest_version}} and version {{current_version}} is installed.",
-        "already_latest_version": "You're already on the latest version",
-        "cancel_update": "Cancel Update!",
+        "already_latest_version": "You are on the latest version",
+        "cancel_update": "Cancel update",
         "update_from_to": "Update from {{current_version}} to {{newest_version}}"
     },
     "navbar": {
-        "donate": "Donate"
+        "donate": "About"
     },
     "security_settings": {
-        "backup_code": "Backup-Code",
-        "get_backup_code": "Get Backup-Code",
-        "activate_2fa": "Activate Two Factor Authentication",
-        "2fa_activated": "Two Factor authentication is activated",
-        "2fa_deactivated": "Two Factor authentication is deactivated",
-        "webauthn": "Webauthn",
-        "webauthn_available": "Webauthn is available",
-        "webauthn_unavailable": "Webauthn is not available",
-        "add_security_key": "Add Security-Key",
+        "backup_code": "Backup code",
+        "get_backup_code": "Get backup code",
+        "activate_2fa": "Activate two-factor authentication",
+        "2fa_activated": "Two-factor authentication is on",
+        "2fa_deactivated": "Two-factor authentication is off",
+        "webauthn": "WebAuthn",
+        "webauthn_available": "WebAuthn is available",
+        "webauthn_unavailable": "WebAuthn is not available",
+        "add_security_key": "Add security key",
         "totp": "TOTP",
         "totp_available": "TOTP is available",
         "totp_unavailable": "TOTP is not available",
         "disable_totp": "Turn off TOTP",
         "enable_totp": "Turn on TOTP",
         "backup_codes": {
-            "your_backup_code": "Your Backup-Code",
-            "save_somewhere_save": "Save this somewhere safe!",
+            "your_backup_code": "Your backup code",
+            "save_somewhere_save": "Keep this somewhere safe.",
             "download_code": "Download code"
         },
         "totp_setup": {
-            "scan_to_set_up": "Scan this QR-code to set up the code",
-            "enter_as_secret_if_no_see_code": "Enter this as the secret if you can't scan the QR-code",
-            "totp_setup": "TOTP-setup",
-            "do_not_forget_backup_code": "Do not forget to save your recovery-code!"
+            "scan_to_set_up": "Scan this QR code to set up the code",
+            "enter_as_secret_if_no_see_code": "Enter this as the secret if you cannot scan the QR code",
+            "totp_setup": "TOTP setup",
+            "do_not_forget_backup_code": "Remember to save your recovery code."
         }
     },
     "view_quiz_page": {
         "made_by": "Made by",
-        "view_on_kahoot": "View on the original"
+        "view_on_kahoot": "View the original"
     },
     "start_game": {
-        "captcha_message": "If enabled, Google's ReCaptcha will load in the browser of players. Only enable if you really need it, since you need the consent of EVERY player to load the captcha.",
-        "normal_mode_description": "Question and answer will only be shown on admins screen. The players will only have colored buttons with symbols matching these on the screen of the admin.",
-        "old_school_mode": "Old-School",
-        "old_school_mode_description": "Questions and images will be shown on both admins screen and on the screen of the players",
-        "start_game": "Start Game"
+        "captcha_message": "If enabled, Google reCAPTCHA loads on every player's phone. Enable it only if you need it, as every player must agree to load it.",
+        "normal_mode_description": "Questions and answers are shown on the big screen only. Phones show the answer shapes.",
+        "old_school_mode": "Classic",
+        "old_school_mode_description": "Questions and images are shown on both the big screen and the phones.",
+        "start_game": "Start game"
     },
     "quiztivity": {
         "editor": {
-            "select_page_type": "Select Page Type",
+            "select_page_type": "Select page type",
             "move_left": "Move left",
             "move_right": "Move right",
             "title_placeholder": "Enter title here",
             "add_new": "Add new",
             "delete": "Delete",
-            "open_shares_menu": "Open Shares menu",
+            "open_shares_menu": "Open shares menu",
             "shares": {
-                "add_new_share": "Add new Share",
+                "add_new_share": "Add new share",
                 "expires_on": "Expires on {{date}}",
                 "never_expires": "Never expires"
             }
@@ -453,17 +453,17 @@
     },
     "components": {
         "popover": {
-            "copied_to_clipboard": "Copied to clipboard!"
+            "copied_to_clipboard": "Copied to clipboard"
         }
     },
     "public_user_page": {
         "joined_on": "Joined on {{date}}",
-        "no_original_quizzes": "This user doesn't have any original quizzes",
+        "no_original_quizzes": "This user has no original quizzes",
         "user_not_found": "User not found"
     },
     "file_dashboard": {
         "not_available": "Not available",
-        "missing": "MISSING!",
+        "missing": "Missing",
         "unset": "Unset",
         "size": "Size: {{size}} MiB",
         "caption": "Caption: {{caption}}",
@@ -474,8 +474,8 @@
         "delete_image": "Delete image",
         "edit_the_image": "Edit the image",
         "filename_word": "Filename",
-        "alt_text": "Alt(ernate) text / Caption",
-        "storage_usage": "You've used {{used}} MiB out of {{total}} MiB of storage. That's equivalent to {{percent}}% of your storage."
+        "alt_text": "Alternative text or caption",
+        "storage_usage": "You have used {{used}} MiB of {{total}} MiB of storage ({{percent}}%)."
     },
     "video_uploader": {
         "time_elapsed": "Time elapsed",
@@ -483,8 +483,8 @@
     },
     "downloader": {
         "select_download_type": "Select download type",
-        "own_format": "Own Format",
-        "excel_format": "Excel Format",
-        "help": "The own format (.cqa) also includes pictures and supports every question type, whereas the excel format only supports voting and multiple-choice questions."
+        "own_format": "Live Quiz format",
+        "excel_format": "Excel format",
+        "help": "The Live Quiz format (.cqa) includes images and supports every question type. The Excel format supports voting and multiple-choice questions only."
     }
 }

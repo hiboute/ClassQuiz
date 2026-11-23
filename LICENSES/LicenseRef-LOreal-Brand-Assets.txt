@@ -1,0 +1,11 @@
+L'Oréal brand assets, used with permission, not covered by MPL-2.0.
+
+The files marked with this licence identifier (logos, typefaces, photographic
+and graphic grounds of the India Tech Hub / L'Oréal Beauty Tech identity) are
+the property of L'Oréal. They are included in this repository with permission,
+for the India Tech Hub Live Quiz only.
+
+They are not covered by the Mozilla Public License 2.0 that applies to the
+source code, and no licence to use, copy, modify or redistribute them is
+granted by this repository. Any other use requires the prior permission of
+L'Oréal.

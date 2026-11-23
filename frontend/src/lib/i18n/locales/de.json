@@ -328,7 +328,7 @@
     "footer": {
         "more_details_here": "Mehr Details hier",
         "donate": "Wenn India Tech Hub Live Quiz hilfreich ist, würde eine {{donate_link}} helfen.",
-        "self_ads": "Gemacht mit ❤️ von {{mawoka_link}} und mit der Hilfe von {{others_link}}."
+        "self_ads": "India Tech Hub Live Quiz, built on ClassQuiz."
     },
     "error_page": {
         "404_text": "Die Seite nach der du suchst existiert nicht mehr oder hat nie existiert. Wer weiß?",

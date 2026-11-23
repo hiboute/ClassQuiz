@@ -13,15 +13,15 @@
                 "wrong_creds": "Mot de passe ou email incorrect.",
                 "description": {
                     "wrong_creds": "Assurez-vous que votre mot de passe et votre email sont corrects.",
-                    "unexpected": "Une bonne vieille erreur inattendue s'est produite !"
+                    "unexpected": "Une erreur s'est produite. Veuillez réessayer."
                 },
-                "unexpected": "Erreur inattendue !"
+                "unexpected": "Erreur inattendue"
             }
         },
         "welcome_back": "Bon retour parmi nous.",
         "login_or_create_account": "Se connecter ou créer un compte",
         "already_have_account": "Pas encore de compte ?",
-        "email_or_username": "Email ou Nom d'utilisateur",
+        "email_or_username": "Email ou nom d'utilisateur",
         "use_backup_code": "Utilisez un code de sauvegarde"
     },
     "words": {
@@ -47,7 +47,7 @@
         "pin": "PIN",
         "kick": "Éjecter",
         "register": "S'enregistrer",
-        "docs": "Documentation",
+        "docs": "Aide",
         "close": "Fermer",
         "save": "Enregistrer",
         "description": "Description",
@@ -76,7 +76,7 @@
         "game_pin": "Code de jeu",
         "other": "autre",
         "other_plural": "autres",
-        "donating": "Donner",
+        "donating": "soutenir le projet",
         "practice": "S'entraîner",
         "error": "Erreur",
         "voting": "Vote",
@@ -105,7 +105,7 @@
         "no": "Non",
         "quiztivity": "Quiztivité",
         "next": "Suivant",
-        "check_choice": "Choix unique",
+        "check_choice": "Choix multiples",
         "progress": "Progrès",
         "video": "Vidéo",
         "library": "Bibliothèque",
@@ -118,98 +118,98 @@
         "update": "Mettre à jour",
         "never": "Jamais",
         "analytics": "Statistiques",
-        "play_plural": "Joue",
+        "play_plural": "Parties",
         "rating": "Note",
-        "dislike_plural": "\"N'aime pas\"",
+        "dislike_plural": "N'aime pas",
         "info": "Info",
-        "like": "\"J'aime\"",
-        "dislike": "\"N'aime pas\"",
-        "like_plural": "\"J'aime\"",
+        "like": "J'aime",
+        "dislike": "N'aime pas",
+        "like_plural": "J'aime",
         "player": "Joueur"
     },
     "index_page": {
-        "slogan": "La plateforme de quiz open-source !",
+        "slogan": "Le quiz en direct des événements India Tech Hub",
         "meta": {
-            "description": "India Tech Hub Live Quiz est une application d'apprentissage interactif destiné aux étudiants, elle est open-source et gratuite",
+            "description": "India Tech Hub Live Quiz : le quiz en direct des événements India Tech Hub. Rejoignez depuis votre téléphone et jouez sur grand écran.",
             "title": "Accueil"
         },
         "features_description": {
-            "1": "India Tech Hub Live Quiz est un outil de quiz vous permettant de créer et gérer des quiz.",
-            "2": "La fonctionnalité principale est la fonction d'import de quiz Kahoot!, vous permettant de créer des quiz directement depuis Kahoot!.",
-            "3": "L'éditeur et la fonction d'export des résultats de quiz en format Excel sont des fonctionnalités remarquables de l'application."
+            "1": "Live Quiz permet de créer, d'animer et de jouer des quiz en direct.",
+            "2": "Les joueurs répondent depuis leur téléphone pendant que la question s'affiche sur grand écran.",
+            "3": "Les organisateurs peuvent exporter les résultats au format Excel."
         },
-        "stats": "Il y a déjà {{user_count}} utilisateurs et {{quiz_count}} quiz sur India Tech Hub Live Quiz.",
+        "stats": "{{quiz_count}} quiz et {{user_count}} organisateurs.",
         "see_what_true_and_false": "Voir ce qui était vrai ou faux",
         "see_how_many_true_and_false": "Voir combien avaient vrai ou faux",
-        "create_or_import": "Créer ou Importer",
+        "create_or_import": "Créer ou importer",
         "see_all_quizzes": "Voir tous vos quiz",
-        "teachers_site": "Site de l'enseignant",
-        "students_site": "Site de l'étudiant",
-        "no_tracking": "Pas de tracking",
-        "self_hostable": "Auto-hébergeable",
-        "german_server": "Serveur allemand",
-        "user_friendly": "Ergonomique",
-        "completely_free": "Complètement gratuit",
+        "teachers_site": "Écran de l'animateur",
+        "students_site": "Écran du joueur",
+        "no_tracking": "Pas de pistage",
+        "self_hostable": "Hébergé pour l'événement",
+        "german_server": "Serveur de l'événement",
+        "user_friendly": "Simple à jouer",
+        "completely_free": "Gratuit pour jouer",
         "quiz_results_downloadable": "Résultats de quiz téléchargeables",
         "multilingual": "Multilingue",
         "dark_mode": "Mode sombre",
-        "get_a_quiz": "1. Faire un quiz",
+        "get_a_quiz": "1. Préparer un quiz",
         "create_a_quiz_from_scratch": "Créer un quiz vierge avec l'éditeur, y inclure des images et bien plus",
-        "find_or_explore": "Rechercher (ou explorer) des quiz créés ou importés par d'autres",
+        "find_or_explore": "Trouver des quiz créés par d'autres organisateurs",
         "play_quiz": "2. Lancer le quiz",
         "select_answer": "Sélectionner la réponse",
         "view_results": "Voir les résultats",
-        "check_if_chosen_wisely": "Vérifier si vous avez bien choisi.",
-        "list_winners": "Liste des gagnants",
-        "get_ranking_and_winners": "Avoir le classement et voir les gagnants",
-        "why_classquiz": "Pourquoi India Tech Hub Live Quiz ?",
-        "no_tracking_content": "Kahoot! vous suit et envoie ces informations à des tiers, mais pas India Tech Hub Live Quiz.",
-        "self_hostable_content": "India Tech Hub Live Quiz est facilement auto-hébergeable, vos données sont sous contrôle !",
-        "user_friendly_content": "India Tech Hub Live Quiz se veut simple d'utilisation, de manière à être utilisable par le plus grand nombre.",
-        "import_quiz_from_kahoot_and_edit": "Importer un quiz depuis Kahoot! et l'éditer sur India Tech Hub Live Quiz",
-        "quiz_results_downloadable_content": "Les résultats des quiz sont aisément exportables en format Excel (apparemment les autres outils ne le peuvent pas)",
-        "multilingual_content": "India Tech Hub Live Quiz est entièrement traduit en anglais, français, allemand, italien, norvégien bokmål, turc, et partiellement en indonésien et catalan.",
-        "dark_mode_content": "L'une des fonctionnalités les plus importantes qu'un site peut avoir !",
-        "german_server_content": "Les serveurs de India Tech Hub Live Quiz sont situés en Allemagne et hébergés par Netcup.",
-        "choose_answer_wisely": "Choisissez votre réponse judicieusement",
-        "completely_free_content": "India Tech Hub Live Quiz est gratuit pour l'utilisateur, sans plan payant ou de redirection pour une version payante. Tout don est donc apprécié.",
+        "check_if_chosen_wisely": "Voir votre résultat",
+        "list_winners": "Classement",
+        "get_ranking_and_winners": "Voir le classement et le podium",
+        "why_classquiz": "À propos de Live Quiz",
+        "no_tracking_content": "Live Quiz n'utilise ni publicité ni pistage par des tiers.",
+        "self_hostable_content": "Live Quiz fonctionne sur un serveur opéré pour l'événement.",
+        "user_friendly_content": "Rejoignez avec un code de jeu et un pseudo. Aucun compte n'est nécessaire pour jouer.",
+        "import_quiz_from_kahoot_and_edit": "Importer un quiz depuis un fichier et le modifier dans Live Quiz",
+        "quiz_results_downloadable_content": "Les organisateurs peuvent exporter les résultats dans un tableur.",
+        "multilingual_content": "Live Quiz est disponible en plusieurs langues.",
+        "dark_mode_content": "Conçu pour les salles sombres et les grands écrans.",
+        "german_server_content": "Live Quiz fonctionne sur un serveur opéré pour l'événement.",
+        "choose_answer_wisely": "Choisissez votre réponse",
+        "completely_free_content": "Jouer est gratuit et ne demande aucun compte.",
         "download_quizzes": "Télécharger des quiz",
-        "community_driven": "Piloté par la communauté",
-        "download_quizzes_content": "Les quiz peuvent être téléchargés en un seul fichier et importés à tout moment, ce qui vous permet de déplacer facilement vos quiz vers une autre instance de India Tech Hub Live Quiz.",
-        "community_driven_content": "India Tech Hub Live Quiz dépend de sa communauté pour le financement, les idées de tests, les demandes de fonctionnalités, les traductions et plus encore ! Vous pouvez aussi faire partie de la communauté India Tech Hub Live Quiz !",
-        "how_does_classquiz_work": "Comment fonctionne India Tech Hub Live Quiz ?",
-        "no_player_limit": "Nombre de joueurs illimité",
-        "no_player_limit_content": "India Tech Hub Live Quiz n'a pas de limite artificielle de nombre de joueurs. En théorie, plus de 1000 joueurs peuvent participer au même quiz, mais les tests n'ont été réalisés que jusqu'à 300 participants."
+        "community_driven": "Basé sur ClassQuiz",
+        "download_quizzes_content": "Les quiz peuvent être téléchargés en un seul fichier et importés à nouveau à tout moment.",
+        "community_driven_content": "Live Quiz est basé sur ClassQuiz, un logiciel open source créé par Mawoka et ses contributeurs.",
+        "how_does_classquiz_work": "Comment fonctionne Live Quiz",
+        "no_player_limit": "Jusqu'à 400 joueurs",
+        "no_player_limit_content": "Live Quiz est prévu pour 400 joueurs dans une même partie."
     },
     "overview_page": {
         "created_at": "Créé le",
         "question_count": "Nombre de questions",
-        "no_quizzes": "Cliquez sur le bouton \"Créer\" ou importez un quiz pour commencer."
+        "no_quizzes": "Sélectionnez Créer, ou importez un quiz, pour commencer."
     },
     "edit_page": {
         "success_update_title": "Quiz mis à jour.",
-        "success_update_body": "Personne ne s'attendra à l'Inquizition."
+        "success_update_body": "Vos modifications sont enregistrées."
     },
     "create_page": {
         "success": {
-            "body": "Que le jeu commence.",
+            "body": "Il est prêt à être animé.",
             "title": "Quiz créé."
         }
     },
     "register_page": {
-        "greeting": "Ravi de vous connaître !",
+        "greeting": "Créez votre compte organisateur",
         "create_account": "Créer un compte",
         "forgot_password?": "Mot de passe oublié ?",
         "already_have_account?": "Vous avez déjà un compte ?"
     },
     "editor": {
-        "time_in_seconds": "Temps en seconde",
+        "time_in_seconds": "Temps en secondes",
         "add_new_question": "Ajouter une autre question",
         "add_new_answer": "Ajouter une autre réponse",
         "delete_question": "Supprimer la question",
         "delete_answer": "Supprimer la réponse",
         "right_or_true?": "Vrai ?",
-        "not_all_links_imgur_links": "Tous les liens ne sont pas des liens Imgur !",
+        "not_all_links_imgur_links": "Tous les liens ne sont pas des liens Imgur.",
         "bg_image": "Image d'arrière plan",
         "slide": {
             "rectangle": "Rectangle",
@@ -223,32 +223,32 @@
         "voting_description": "Les réponses n'ajoutent aucun point",
         "order_description": "Les réponses peuvent être mises dans le bon ordre",
         "text_description": "Les joueurs peuvent saisir du texte",
-        "range_description": "Une plage de chiffres peut être sélectionnée à l'aide d'un curseur.",
-        "empty": "Vide...",
-        "no_title": "Aucun titre...",
-        "check_choice_description": "Toutes les réponses correctes doivent être choisies pour marquer des points.",
+        "range_description": "Une plage de nombres peut être sélectionnée à l'aide d'un curseur",
+        "empty": "Vide",
+        "no_title": "Aucun titre",
+        "check_choice_description": "Toutes les réponses correctes doivent être choisies pour marquer des points",
         "need_more_help": "Besoin d'aide ?",
         "enter_answer": "Entrez une réponse",
-        "visit_docs": "Lisez la documentation.",
+        "visit_docs": "Consultez l'aide.",
         "enable_reorder": "Activer le mode réorganisation",
         "disable_reorder": "Désactiver le mode réorganisation",
         "advanced_settings": "Paramètres avancés",
-        "hide_question_results": "Cacher les résultats de la question ?"
+        "hide_question_results": "Cacher les résultats de la question"
     },
     "import_page": {
         "need_help": "Besoin d'aide ?",
-        "visit_docs": "Voir la documentation",
-        "a_kahoot_quiz": "Un quiz Kahoot!",
-        "side_import_kahoot": "De ce côté, vous pouvez importer des quiz, qui se trouvent sur Kahoot!.",
-        "classquiz_quiz": "Un quiz India Tech Hub Live Quiz",
-        "upload_file_ending": "Téléverser le fichier se terminant par .cqa ou .xlsx",
-        "url_should_look_like_this": "L'URL devrait ressembler à ceci : https://create.kahoot.it/details/...",
-        "this_side_classquiz": "De ce côté, vous pouvez importer des quiz, qui ont été exportés de India Tech Hub Live Quiz.",
-        "this_side_classquiz_excel": "Vous pouvez aussi téléverser des fichiers Excel, si vous avez rempli le modèle suivant. Si un quiz avec le titre existe déjà, cela rajoutera les questions au quiz existant.",
-        "download_template_here": "Télécharger le modèle"
+        "visit_docs": "Consulter l'aide",
+        "a_kahoot_quiz": "Fichier de quiz",
+        "side_import_kahoot": "Importer un quiz depuis un fichier.",
+        "classquiz_quiz": "Importer un fichier de quiz",
+        "upload_file_ending": "Choisissez un fichier .cqa ou .xlsx",
+        "url_should_look_like_this": "Téléversez un fichier .cqa ou .xlsx.",
+        "this_side_classquiz": "Importez un quiz exporté depuis Live Quiz ou ClassQuiz (.cqa), ou un tableur (.xlsx).",
+        "this_side_classquiz_excel": "Un tableur doit suivre la structure ci-dessous. Si un quiz du même titre existe déjà, les questions y sont ajoutées.",
+        "download_template_here": "Structure du tableur"
     },
     "admin_page": {
-        "already_registered_as_admin": "Il y a déjà un administrateur enregistré pour ce jeu.",
+        "already_registered_as_admin": "Un animateur est déjà connecté à cette partie.",
         "start_game": "Commencer le jeu",
         "time_left": "Temps restant",
         "get_results": "Obtenir les résultats",
@@ -257,13 +257,13 @@
         "export_results": "Exporter les résultats",
         "show_next_question": "Montrer la prochaine question",
         "start_by_showing_first_question": "Démarrer en montrant la première question.",
-        "no_answers": "Pas de réponses !",
+        "no_answers": "Aucune réponse",
         "stop_time": "Arrêter le temps",
         "next_question": "Question suivante ({{question}})",
         "show_results": "Montrer les résultats",
-        "stop_time_and_solutions": "Arrêter le temps et montrer les solutions",
-        "enter_answer_into_field": "Saisissez votre réponse dans le champ de saisie !",
-        "answers_submitted": "{{answer_count}} Réponses soumises",
+        "stop_time_and_solutions": "Arrêter le temps et montrer les réponses",
+        "enter_answer_into_field": "Saisissez votre réponse dans le champ",
+        "answers_submitted": "{{answer_count}} réponses envoyées",
         "request_export_results": "Demande de téléchargement des résultats",
         "save_results": "Sauvegarder les résultats",
         "download_export_results": "Télécharger les résultats"
@@ -275,7 +275,7 @@
         "old_password": "Ancien mot de passe",
         "new_password": "Nouveau mot de passe",
         "repeat_password": "Répéter le mot de passe",
-        "change_password_submit": "Changer le mot de passe !",
+        "change_password_submit": "Changer le mot de passe",
         "last_seen": "Dernière consultation",
         "check_location": "Vérifier la localisation",
         "delete_this_session": "Supprimer cette session",
@@ -289,12 +289,12 @@
         "imported_by": "Importé par"
     },
     "search_page": {
-        "at_least_3_characters": "Entrez au moins 3 caractères…",
-        "nothing_here": "Il n'y a rien ici..."
+        "at_least_3_characters": "Entrez au moins 3 caractères",
+        "nothing_here": "Aucun résultat"
     },
     "play_page": {
         "1st_place": "1ère place",
-        "end_sentence": "C'est terminé !",
+        "end_sentence": "C'était la dernière question.",
         "2nd_place": "2ème place",
         "3rd place": "3ème place",
         "with_out_of": "avec {{correct_questions}} sur {{total_question_count}}",
@@ -305,34 +305,34 @@
         "final_result_rank": "{{place}} : {{username}} avec {{points}} points",
         "players_waiting": "{{count}} joueur en attente",
         "players_waiting_plural": "{{count}} joueurs en attente",
-        "your_place": "Vous êtes n°{{place}} !"
+        "your_place": "Vous êtes à la place {{place}}"
     },
     "editor_page": {
         "add_an_answer": "Ajouter une réponse",
-        "right_click_to_delete": "Faites un clic-droit sur une réponse pour la supprimer !"
+        "right_click_to_delete": "Faites un clic droit sur une réponse pour la supprimer"
     },
     "dashboard": {
         "search_for_own_quizzes": "Chercher dans vos quiz",
-        "commandpalette_notice": "Appuyer sur <kbd>Ctr</kbd>+<kbd>k</kbd> ou <kbd>Meta</kbd>+<kbd>k</kbd> pour ouvrir la palette de commandes",
-        "views_n_plays": "Vues et Jeux",
-        "info_analytics": "Les \"Jeux\" indiquent seulement combien de fois le quiz a été lancé (vous y compris), alors que les \"Vues\" comptent combien de fois la page \"Vue\" a été visitée, donc cela compte aussi les bots (désolé pour ça).",
+        "commandpalette_notice": "Appuyez sur <kbd>Ctrl</kbd>+<kbd>k</kbd> ou <kbd>Meta</kbd>+<kbd>k</kbd> pour ouvrir la palette de commandes",
+        "views_n_plays": "Vues et parties",
+        "info_analytics": "Les parties comptent le nombre de lancements du quiz, y compris par vous. Les vues comptent les visites de la page du quiz, robots compris.",
         "create_quiz": "Créer un quiz"
     },
     "footer": {
-        "more_details_here": "Plus de détails ici",
-        "donate": "Si vous trouvez cela utile, pensez à {{donate_link}}.",
-        "self_ads": "Fait avec ❤️ par {{mawoka_link}} et l'aide de {{others_link}}."
+        "more_details_here": "Plus de détails",
+        "donate": "Basé sur un logiciel open source.",
+        "self_ads": "India Tech Hub Live Quiz, basé sur ClassQuiz."
     },
     "error_page": {
-        "404_text": "La page que vous recherchez a disparu ou n'a même jamais existé. Qui sait ?",
-        "unknown_error_text": "Cela ne devrait pas arriver. C'est probablement ma faute, pas la tienne, mais peut-être que tu as un pouvoir magique pour casser les choses..."
+        "404_text": "Cette page n'existe pas ou a été déplacée.",
+        "unknown_error_text": "Une erreur s'est produite. Veuillez réessayer."
     },
     "uploader": {
         "add_image": "Ajouter un média",
-        "select_upload_type": "Sélectionnez le type de téléchargement",
+        "select_upload_type": "Sélectionnez le type de média",
         "upload_a_video": "Télécharger une vidéo",
         "upload_video": "Télécharger la vidéo",
-        "upload_video_popup_notice": "La fenêtre contextuelle est ouverte ; jetez-y un coup d'œil pour obtenir de plus amples informations.",
+        "upload_video_popup_notice": "La fenêtre de téléversement est ouverte. Suivez les étapes qui s'y trouvent.",
         "images_by_pixabay": "Images en provenance de Pixabay",
         "next_page": "Page suivante",
         "visit_pixabay": "Visitez Pixabay",
@@ -380,8 +380,8 @@
         "not_available": "Non disponible",
         "edit_the_image": "Modifier l'image",
         "filename_word": "Nom du fichier",
-        "storage_usage": "Vous avez utilisé {{used}} Mo sur un total de {{total}} Mo de stockage. Cela équivaut à {{percent}}% de votre espace de stockage.",
-        "missing": "MANQUANT !",
+        "storage_usage": "Vous avez utilisé {{used}} Mo sur {{total}} Mo de stockage ({{percent}} %).",
+        "missing": "Manquant",
         "unset": "Indéfini"
     },
     "avatar_settings": {
@@ -395,14 +395,14 @@
         "clothe_type": "Vêtements",
         "clothe_graphic_type": "Motif",
         "facial_hair_color": "Couleur de la pilosité faciale",
-        "thats_you": "C'est vous !",
+        "thats_you": "C'est vous",
         "top_type": "Haut",
         "hair_color": "Couleur des cheveux",
         "clothe_color": "Couleur des vêtements",
         "go_back": "Retour"
     },
     "results_page": {
-        "no_results_so_far": "Aucun résultat enregistré jusqu'à présent...",
+        "no_results_so_far": "Aucun résultat enregistré pour le moment",
         "general_overview": {
             "sentence": "Le quiz \"{{title}}\", qui a été joué le {{date}} a eu {{player_count}} joueurs avec un score moyen de {{average_score}}."
         },
@@ -413,9 +413,9 @@
     "start_game": {
         "old_school_mode": "Classique",
         "start_game": "Lancer le jeu",
-        "captcha_message": "Si cette option est activée, le ReCaptcha de Google se chargera dans le navigateur des joueurs. N'activez cette option que si vous en avez vraiment besoin, car vous avez besoin du consentement de CHAQUE joueur pour charger le captcha.",
-        "old_school_mode_description": "Les questions et les images seront affichées à la fois sur l'écran des administrateurs et sur l'écran des joueurs.",
-        "normal_mode_description": "Questions et réponses ne seront affichées que sur l'écran de l'administrateur, comme dans Kahoot ! Les joueurs n'auront que des boutons de couleur avec des symboles correspondants sur l'écran de l'administrateur."
+        "captcha_message": "Si cette option est activée, Google reCAPTCHA se charge sur le téléphone de chaque joueur. Ne l'activez que si nécessaire, car chaque joueur doit accepter son chargement.",
+        "old_school_mode_description": "Les questions et les images sont affichées sur le grand écran et sur les téléphones.",
+        "normal_mode_description": "Les questions et les réponses ne sont affichées que sur le grand écran. Les téléphones affichent les formes des réponses."
     },
     "result_page": {
         "average_score": "Score moyen : {{average_score}}",
@@ -429,13 +429,13 @@
     },
     "security_settings": {
         "totp_setup": {
-            "enter_as_secret_if_no_see_code": "Entrez ceci comme secret si vous ne pouvez pas scanner le QR-code.",
-            "scan_to_set_up": "Scanner ce QR-code pour configurer le code",
+            "enter_as_secret_if_no_see_code": "Entrez ceci comme secret si vous ne pouvez pas scanner le QR code",
+            "scan_to_set_up": "Scannez ce QR code pour configurer le code",
             "totp_setup": "Paramétrage TOTP",
-            "do_not_forget_backup_code": "N'oubliez pas de sauvegarder votre code de récupération !"
+            "do_not_forget_backup_code": "Pensez à sauvegarder votre code de récupération."
         },
         "activate_2fa": "Activer l'authentification à deux facteurs",
-        "webauthn_available": "Webauthn est disponible",
+        "webauthn_available": "WebAuthn est disponible",
         "totp": "TOTP",
         "totp_available": "TOTP est disponible",
         "totp_unavailable": "TOTP n'est pas disponible",
@@ -443,20 +443,20 @@
         "enable_totp": "Activer TOTP",
         "backup_codes": {
             "your_backup_code": "Votre code de sauvegarde",
-            "save_somewhere_save": "Sauvegardez-le dans un endroit sûr !",
+            "save_somewhere_save": "Conservez-le dans un endroit sûr.",
             "download_code": "Télécharger le code"
         },
         "get_backup_code": "Obtenir le code de sauvegarde",
         "2fa_activated": "L'authentification à deux facteurs est activée",
         "2fa_deactivated": "L'authentification à deux facteurs est désactivée",
-        "webauthn": "Webauthn",
+        "webauthn": "WebAuthn",
         "add_security_key": "Ajouter une clé de sécurité",
-        "webauthn_unavailable": "Webauthn n'est pas disponible",
+        "webauthn_unavailable": "WebAuthn n'est pas disponible",
         "backup_code": "Code de sauvegarde"
     },
     "view_quiz_page": {
         "made_by": "Créé par",
-        "view_on_kahoot": "Voir sur Kahoot !"
+        "view_on_kahoot": "Voir l'original"
     },
     "video_uploader": {
         "time_elapsed": "Temps écoulé",
@@ -464,32 +464,32 @@
     },
     "components": {
         "popover": {
-            "copied_to_clipboard": "Copié dans le presse-papiers !"
+            "copied_to_clipboard": "Copié dans le presse-papiers"
         }
     },
     "public_user_page": {
-        "no_original_quizzes": "Cet utilisateur n'a pas de quiz original.",
+        "no_original_quizzes": "Cet utilisateur n'a pas de quiz original",
         "joined_on": "Rejoint le {{date}}",
         "user_not_found": "Utilisateur inconnu"
     },
     "navbar": {
-        "donate": "Faire un don"
+        "donate": "À propos"
     },
     "controllers": {
         "last_seen": "Dernière vue",
-        "cancel_update": "Annulation !",
+        "cancel_update": "Annuler la mise à jour",
         "add_new_controller": "Ajouter un nouveau contrôleur",
         "player_name": "Nom du joueur",
         "controller_name": "Nom du contrôleur",
-        "already_latest_version": "Vous possédez la dernière version.",
+        "already_latest_version": "Vous avez la dernière version.",
         "update_from_to": "Mise à jour depuis {{current_version}} vers {{newest_version}}",
         "first_seen": "Première vue",
         "version_overview": "La dernière version disponible est {{newest_version}} et la version actuelle {{current_version}} est installée."
     },
     "downloader": {
         "excel_format": "Format Excel",
-        "own_format": "Format India Tech Hub Live Quiz",
-        "help": "Le format India Tech Hub Live Quiz (.cqa) intégre aussi les images et les types de questions, alors que le format Excel ne supporte que les votes et les questions à choix multiples.",
+        "own_format": "Format Live Quiz",
+        "help": "Le format Live Quiz (.cqa) inclut les images et prend en charge tous les types de questions. Le format Excel ne prend en charge que les votes et les questions à choix multiples.",
         "select_download_type": "Sélectionner le type de téléchargement"
     }
 }

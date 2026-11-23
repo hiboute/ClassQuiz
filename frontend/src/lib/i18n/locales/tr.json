@@ -318,7 +318,7 @@
         "info_analytics": "\"Oynanmalar\" yalnızca quizin ne sıklıkla başlatıldığını gösterirken (siz dahil), \"Görüntülemeler\" \"Görüntüle\" sayfasının ne kadar ziyaret edildiğini sayar, yani botları da sayar (bunun için üzgünüm)."
     },
     "footer": {
-        "self_ads": "{{mawoka_link}} tarafından ve {{others_link}}nin de yardımıyla ❤️ ile yapıldı.",
+        "self_ads": "India Tech Hub Live Quiz, built on ClassQuiz.",
         "more_details_here": "Daha fazla detay burada",
         "donate": "Eğer bunu kullanışlı bulduysanız, lütfen {{donate_link}}yı bir düşünün."
     },

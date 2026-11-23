@@ -319,7 +319,7 @@
         "create_quiz": "Crea un nuovo quiz"
     },
     "footer": {
-        "self_ads": "Realizzato con ❤️ da {{mawoka_link}} e con l'aiuto di {{others_link}}.",
+        "self_ads": "India Tech Hub Live Quiz, built on ClassQuiz.",
         "more_details_here": "Maggiori informazioni qui",
         "donate": "Se ritieni questa applicazione utile, considera la possibilità di fare una {{donate_link}}."
     },

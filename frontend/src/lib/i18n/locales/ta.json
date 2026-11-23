@@ -320,7 +320,7 @@
         "create_quiz": "புதிய நொடி வினாவை உருவாக்கவும்"
     },
     "footer": {
-        "self_ads": "{{mawoka_link} by மற்றும் {{others_link} of உதவியுடன் தயாரிக்கப்பட்டது.",
+        "self_ads": "India Tech Hub Live Quiz, built on ClassQuiz.",
         "more_details_here": "மேலும் விவரங்கள் இங்கே",
         "donate": "இது பயனுள்ளதாக இருந்தால், தயவுசெய்து {{donate_link}} ஐக் கவனியுங்கள்."
     },

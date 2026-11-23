@@ -15,13 +15,12 @@ import ormar.exceptions
 from classquiz.helpers import generate_spreadsheet, handle_import_from_excel
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import ValidationError, BaseModel
+from pydantic import BaseModel
 
 from classquiz.auth import get_current_user
 from classquiz.config import redis, settings, storage, meilisearch
 from classquiz.db.models import Quiz, User, PlayGame, GameInLobby, QuizQuestion, QuizQuestionType
 from classquiz.helpers.box_controller import generate_code
-from classquiz.kahoot_importer.import_quiz import import_quiz
 import urllib.parse
 
 settings = settings()
@@ -109,6 +108,8 @@ async def start_quiz(
                 continue
             if question["type"] == QuizQuestionType.SLIDE:
                 continue
+            if question["type"] == QuizQuestionType.WORD_CLOUD:
+                continue
             random.shuffle(question["answers"])
 
     game = PlayGame(
@@ -179,20 +180,6 @@ async def get_quiz_list(user: User = Depends(get_current_user), page_size: int |
         )
     except ormar.exceptions.QueryDefinitionError:
         raise HTTPException(status_code=400, detail="Invalid page(size). page(size) have to be greater than 0.")
-
-
-@router.post("/import/{quiz_id}")
-async def import_quiz_route(quiz_id: str, user: User = Depends(get_current_user)):
-    if user.storage_used > settings.free_storage_limit:
-        raise HTTPException(status_code=409, detail="Storage limit reached")
-    resp_data = await import_quiz(quiz_id, user)
-    try:
-        if type(resp_data) is int:
-            raise HTTPException(status_code=resp_data, detail="kahoot")
-        else:
-            return resp_data
-    except ValidationError:
-        raise HTTPException(400, detail="unsupported")
 
 
 @router.delete("/delete/{quiz_id}")
